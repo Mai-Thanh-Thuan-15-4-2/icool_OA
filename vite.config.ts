@@ -1,20 +1,22 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000', // Dùng cho local dev
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''), // Loại bỏ /api khỏi URL
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },
   build: {
-    outDir: 'dist', // Thư mục đầu ra cho Vercel
-    sourcemap: false, // Tắt sourcemap để giảm kích thước build
+    outDir: 'dist',
+    sourcemap: false,
+    // Đảm bảo build tương thích với Vercel
+    target: 'esnext',
+    minify: 'esbuild',
   },
 })
