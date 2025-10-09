@@ -649,6 +649,7 @@ const App: React.FC = () => {
               <input
                 type="text"
                 value={userId}
+                style={{ width: "90%" }}
                 onChange={(e) => setUserId(e.target.value)}
                 placeholder="Nhập User ID của bạn"
                 className="input-field mb-4"
