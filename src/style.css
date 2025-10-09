@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom components */
+@layer components {
+  .glass-container {
+    @apply bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent;
+  }
+  
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden;
+  }
+  
+  .btn-secondary {
+    @apply bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-2.5 px-5 rounded-xl shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 hover:-translate-y-0.5 transition-all duration-300;
+  }
+  
+  .input-field {
+    @apply w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-700 transition-all duration-300 bg-white/90 focus:outline-none focus:border-primary-500 focus:shadow-lg focus:shadow-primary-500/10 focus:-translate-y-0.5;
+  }
+  
+  .tab-button {
+    @apply flex-1 py-3 px-5 rounded-xl font-semibold text-gray-600 transition-all duration-300 relative overflow-hidden;
+  }
+  
+  .tab-button-active {
+    @apply bg-gradient-to-r from-primary-500 to-secondary-500 text-white shadow-lg shadow-primary-500/30 -translate-y-0.5;
+  }
+  
+  .tab-button-inactive {
+    @apply hover:bg-white/70 hover:text-gray-800 hover:-translate-y-0.5 hover:shadow-md;
+  }
+  
+  .response-container {
+    @apply mt-5 p-5 glass-container rounded-2xl border border-gray-200/80 shadow-xl backdrop-blur-xl;
+  }
+  
+  .attachment-id-container {
+    @apply mt-5 p-5 bg-gradient-to-r from-primary-50 to-secondary-50 rounded-2xl border-2 border-primary-200 shadow-xl shadow-primary-500/10;
+  }
+  
+  .attachment-id-display {
+    @apply flex-1 min-w-0 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl font-mono text-sm text-gray-700 break-all shadow-md transition-all duration-300 hover:border-primary-500 hover:shadow-lg hover:shadow-primary-500/15;
+  }
+}
