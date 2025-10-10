@@ -98,6 +98,10 @@ const App: React.FC = () => {
   // User history states
   const [userHistory, setUserHistory] = useState<UserHistory[]>([]);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
+  
+  // Table data source preferences  
+  const [useUserName, setUseUserName] = useState(true);
+  const [useUserCode, setUseUserCode] = useState(true);
 
   // Load attachment history from localStorage on component mount
   useEffect(() => {
@@ -247,6 +251,24 @@ const App: React.FC = () => {
       
       return limitedHistory;
     });
+  };
+
+  // Function to add new table row
+  const addTableRow = () => {
+    if (tableRows.length >= 2) {
+      alert('Tối đa 2 dòng!');
+      return;
+    }
+    setTableRows(prev => [...prev, { key: "", value: "" }]);
+  };
+
+  // Function to remove table row
+  const removeTableRow = (index: number) => {
+    if (tableRows.length <= 1) {
+      alert('Tối thiểu 1 dòng!');
+      return;
+    }
+    setTableRows(prev => prev.filter((_, i) => i !== index));
   };
 
   // Memoize the copy function
@@ -911,33 +933,42 @@ const App: React.FC = () => {
     
     let tableContentParsed: TableRow[] = [];
     if (enableTable) {
-      // Always use custom labels from tableRows
-      const nameLabel = tableRows[0]?.key || "Tên khách hàng";
-      const codeLabel = tableRows[1]?.key || "Mã ưu đãi";
+      // Build table content dynamically from all table rows that have data
+      tableContentParsed = [];
       
-      // Get name: prioritize user data, fallback to manual input
-      const userName = currentUser?.display_name || tableRows[0]?.value || "";
-      
-      // Get code: prioritize user data, fallback to manual input  
-      const userCode = (currentUser?.code && currentUser.code.trim()) ? currentUser.code : (tableRows[1]?.value || "");
-      
-      // Build table content if we have at least name or code
-      if (userName.trim() || userCode.trim()) {
-        tableContentParsed = [];
+      tableRows.forEach((row, index) => {
+        // Get user data for this row
+        let value = "";
         
-        // Add name row if we have name
-        if (userName.trim()) {
-          tableContentParsed.push({ key: nameLabel, value: userName });
+        if (index === 0) {
+          // First row: check if using user name
+          if (useUserName && currentUser?.display_name) {
+            value = currentUser.display_name;
+          } else {
+            value = row.value || "";
+          }
+        } else if (index === 1) {
+          // Second row: check if using user code
+          if (useUserCode && currentUser?.code && currentUser.code.trim()) {
+            value = currentUser.code;
+          } else {
+            value = row.value || "";
+          }
+        } else {
+          // Additional rows: use manual input only
+          value = row.value || "";
         }
         
-        // Add code row if we have code
-        if (userCode.trim()) {
-          tableContentParsed.push({ key: codeLabel, value: userCode });
+        // Only add row if both key and value have content
+        if (row.key.trim() && value.trim()) {
+          tableContentParsed.push({ key: row.key, value: value });
         }
-      } else {
-        // No data available at all
+      });
+      
+      // Check if we have at least one row with data
+      if (tableContentParsed.length === 0) {
         setMessageResponse(
-          '<h3 class="text-lg font-semibold text-red-600">Lỗi:</h3><pre class="bg-red-50 p-4 rounded-xl text-red-700 text-sm">Vui lòng nhập ít nhất tên hoặc code trong bảng thủ công hoặc đảm bảo người dùng có thông tin.</pre>'
+          '<h3 class="text-lg font-semibold text-red-600">Lỗi:</h3><pre class="bg-red-50 p-4 rounded-xl text-red-700 text-sm">Vui lòng nhập ít nhất một dòng có đầy đủ nhãn và giá trị trong bảng.</pre>'
         );
         return false;
       }
@@ -1581,22 +1612,66 @@ const App: React.FC = () => {
                     <h4 className="table-info-title">📋 Thông tin bảng tự động:</h4>
                     <div className="table-info-grid">
                       <div><strong>Nhãn:</strong> Từ ô bên dưới</div>
-                      <div><strong>Tên:</strong> Danh sách → dự phòng</div>
-                      <div><strong>Code:</strong> Cột Code → dự phòng</div>
+                      <div><strong>Dòng 1:</strong> {useUserName ? 'Tên user, nếu không có -> lấy dự phòng bên dưới' : 'Chỉ dự phòng bên dưới'}</div>
+                      <div><strong>Dòng 2:</strong> {useUserCode ? 'Code user, nếu không có -> lấy dự phòng bên dưới' : 'Chỉ dự phòng bên dưới'}</div>
                       <div><strong>Hiển thị:</strong> Dòng có dữ liệu</div>
                     </div>
                   </div>
 
                   <div className="smart-table-tip-compact">
                     <span className="tip-icon">💡</span>
-                    <strong>Ví dụ:</strong> Không có code <span className="tip-arrow">→</span> dùng ô "Giá trị" thứ 2
+                    <strong>Ví dụ:</strong> Không có code <span className="tip-arrow">→</span> dùng ô "Giá trị" thủ công
                   </div>
 
+                  {enableTable && (
+                    <div className="table-data-source">
+                      <h5>
+                        🎯 Nguồn dữ liệu cho từng dòng:
+                      </h5>
+                      <div className="checkbox-options">
+                        <label className="custom-checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={useUserName}
+                            onChange={(e) => setUseUserName(e.target.checked)}
+                            className="custom-checkbox"
+                          />
+                          <span className="checkbox-label-text">🏷️ Dòng 1: Lấy từ <strong>Tên user</strong></span>
+                        </label>
+                        <label className="custom-checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={useUserCode}
+                            onChange={(e) => setUseUserCode(e.target.checked)}
+                            className="custom-checkbox"
+                          />
+                          <span className="checkbox-label-text">🔑 Dòng 2: Lấy từ <strong>Code user</strong></span>
+                        </label>
+                      </div>
+                      <div className="checkbox-hint">
+                        💡 Không check = dùng giá trị thủ công bên dưới
+                      </div>
+                    </div>
+                  )}
+
                   <div className="table-config">
-                    <p className="table-config-label">Tùy chỉnh nhãn và dữ liệu dự phòng:</p>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
+                      <p className="table-config-label">Tùy chỉnh nhãn và dữ liệu dự phòng:</p>
+                      <div style={{display: 'flex', gap: '8px'}}>
+                        <button
+                          type="button"
+                          onClick={addTableRow}
+                          disabled={!enableTable || tableRows.length >= 2}
+                          className="btn-compact btn-secondary-compact"
+                          title="Thêm dòng mới"
+                        >
+                          ➕ Thêm dòng
+                        </button>
+                      </div>
+                    </div>
                     <div className="table-rows-grid">
                       {tableRows.map((row, index) => (
-                        <div key={index} className="table-row-inputs">
+                        <div key={index} className="table-row-inputs" style={{position: 'relative'}}>
                           <input
                             type="text"
                             value={row.key}
@@ -1619,8 +1694,30 @@ const App: React.FC = () => {
                             className="input-field compact table-input"
                             disabled={!enableTable}
                           />
+                          {tableRows.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeTableRow(index)}
+                              disabled={!enableTable}
+                              className="btn-compact"
+                              style={{
+                                position: 'absolute',
+                                right: '-35px',
+                                top: '40%',
+                                transform: 'translateY(-50%)',
+                                padding: '4px 8px',
+                                fontSize: '12px'
+                              }}
+                              title="Xóa dòng này"
+                            >
+                              ❌
+                            </button>
+                          )}
                         </div>
                       ))}
+                    </div>
+                    <div style={{marginTop: '8px', fontSize: '12px', color: '#6b7280'}}>
+                      💡 Dòng {tableRows.length}/2 | Tối thiểu 1 dòng, tối đa 2 dòng
                     </div>
                   </div>
                 </div>
