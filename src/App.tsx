@@ -1,8 +1,20 @@
 import React, { useState, useEffect, useCallback } from "react";
+import * as XLSX from 'xlsx';
 import "./App.css";
 
 interface User {
   user_id: string;
+  display_name?: string;
+  code?: string;
+}
+
+interface UserDetail {
+  user_id: string;
+  display_name: string;
+  user_alias: string;
+  avatar: string;
+  user_is_follower: boolean;
+  user_last_interaction_date: string;
 }
 
 interface ApiResponse {
@@ -11,6 +23,12 @@ interface ApiResponse {
     users?: User[];
     total?: number;
     attachment_id?: string;
+    user_id?: string;
+    display_name?: string;
+    user_alias?: string;
+    avatar?: string;
+    user_is_follower?: boolean;
+    user_last_interaction_date?: string;
   };
   message?: string;
 }
@@ -52,6 +70,7 @@ const App: React.FC = () => {
   const [uploadResponse, setUploadResponse] = useState("");
   const [messageResponse, setMessageResponse] = useState("");
   const [userIds, setUserIds] = useState<string[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [messageHistory, setMessageHistory] = useState<MessageHistory[]>([]);
   const [userId, setUserId] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -93,6 +112,249 @@ const App: React.FC = () => {
     }
   };
 
+  // Update code for a user
+  const updateUserCode = useCallback((userId: string, code: string) => {
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.user_id === userId ? { ...user, code } : user
+      )
+    );
+  }, []);
+
+  // Remove user from list
+  const removeUser = useCallback((userId: string) => {
+    setUsers(prevUsers => prevUsers.filter(user => user.user_id !== userId));
+    setUserIds(prevUserIds => prevUserIds.filter(id => id !== userId));
+    
+    // Update the table display
+    const updatedUsers = users.filter(user => user.user_id !== userId);
+    if (updatedUsers.length === 0) {
+      setUserListResponse(
+        '<h3 class="text-lg font-semibold text-gray-700">Kết quả:</h3><p class="text-gray-600">Không có người dùng nào trong danh sách.</p>'
+      );
+      return;
+    }
+    
+    let tableHtml = `
+      <h3 class="text-lg font-semibold text-gray-700 mb-4">Danh sách người dùng</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full bg-white rounded-xl shadow-lg">
+          <thead>
+            <tr class="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+              <th class="py-4 px-6 text-left font-semibold">STT</th>
+              <th class="py-4 px-6 text-left font-semibold">User ID</th>
+              <th class="py-4 px-6 text-left font-semibold">Tên hiển thị</th>
+              <th class="py-4 px-6 text-left font-semibold">Code</th>
+              <th class="py-4 px-6 text-left font-semibold">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+    updatedUsers.forEach((user, index) => {
+      tableHtml += `
+        <tr class="hover:bg-blue-50 transition-colors duration-200 border-b border-gray-100">
+          <td class="py-3 px-6 text-gray-700">${index + 1}</td>
+          <td class="py-3 px-6 text-gray-700 font-mono text-sm">${user.user_id}</td>
+          <td class="py-3 px-6 text-gray-700">${user.display_name}</td>
+          <td class="py-3 px-6">
+            <input 
+              type="text" 
+              value="${user.code || ''}" 
+              onchange="window.updateUserCode('${user.user_id}', this.value)"
+              class="code-input"
+              placeholder="Nhập mã (khuyến mãi, tên, v.v.)"
+            />
+          </td>
+          <td class="py-3 px-6">
+            <button 
+              onclick="window.removeUser('${user.user_id}')"
+              class="delete-btn"
+              title="Xóa user này khỏi danh sách"
+            >
+             Xóa
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+    tableHtml += `
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-4 text-gray-600 font-medium">Tổng số: ${updatedUsers.length}</p>
+    `;
+    setUserListResponse(tableHtml);
+  }, [users]);
+
+  // Export users to Excel file
+  const exportUsers = useCallback(() => {
+    if (users.length === 0) {
+      alert("Không có dữ liệu người dùng để xuất!");
+      return;
+    }
+
+    // Prepare data for Excel
+    const exportData = users.map((user, index) => ({
+      'STT': index + 1,
+      'User ID': user.user_id,
+      'Tên hiển thị': user.display_name || 'Không có tên',
+      'Code': user.code || ''
+    }));
+
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    
+    // Set column widths
+    const columnWidths = [
+      { wch: 8 },  // STT
+      { wch: 25 }, // User ID
+      { wch: 30 }, // Tên hiển thị
+      { wch: 20 }  // Code
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Danh sách khách hàng');
+
+    // Generate filename with current date
+    const today = new Date().toISOString().split('T')[0];
+    const filename = `danh-sach-khach-hang-${today}.xlsx`;
+
+    // Write and download file
+    XLSX.writeFile(workbook, filename);
+    
+    alert(`Đã xuất ${users.length} người dùng ra file Excel thành công!`);
+  }, [users]);
+
+  // Import users from Excel file
+  const importUsers = useCallback((file: File) => {
+    if (!file) return;
+
+    const allowedExtensions = ['.xlsx', '.xls', '.csv'];
+    const fileExtension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+    
+    if (!allowedExtensions.includes(fileExtension)) {
+      alert("Vui lòng chọn file Excel (.xlsx, .xls) hoặc CSV!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // Get the first worksheet
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        
+        // Convert to JSON
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        
+        if (jsonData.length === 0) {
+          alert("File Excel không có dữ liệu!");
+          return;
+        }
+
+        // Map Excel data to User format
+        const importedUsers: User[] = [];
+        
+        jsonData.forEach((row: any, index: number) => {
+          // Try to find User ID from different possible column names
+          const userId = row['User ID'] || row['user_id'] || row['UserID'] || row['ID'];
+          
+          if (userId && typeof userId === 'string') {
+            const user: User = {
+              user_id: userId.toString().trim(),
+              display_name: (row['Tên hiển thị'] || row['display_name'] || row['Name'] || row['Tên'] || 'Không có tên').toString(),
+              code: (row['Code'] || row['code'] || row['Mã'] || '').toString()
+            };
+            importedUsers.push(user);
+          } else {
+            console.warn(`Dòng ${index + 1}: Không tìm thấy User ID hợp lệ`);
+          }
+        });
+
+        if (importedUsers.length === 0) {
+          alert("Không tìm thấy dữ liệu người dùng hợp lệ trong file!\nVui lòng đảm bảo file có cột 'User ID'.");
+          return;
+        }
+
+        // Update users state
+        setUsers(importedUsers);
+        setUserIds(importedUsers.map(user => user.user_id));
+
+        // Update table display
+        let tableHtml = `
+          <h3 class="text-lg font-semibold text-gray-700 mb-4">Danh sách người dùng (Đã nhập từ Excel)</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full bg-white rounded-xl shadow-lg">
+              <thead>
+                <tr class="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+                  <th class="py-4 px-6 text-left font-semibold">STT</th>
+                  <th class="py-4 px-6 text-left font-semibold">User ID</th>
+                  <th class="py-4 px-6 text-left font-semibold">Tên hiển thị</th>
+                  <th class="py-4 px-6 text-left font-semibold">Code</th>
+                  <th class="py-4 px-6 text-left font-semibold">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+        importedUsers.forEach((user, index) => {
+          tableHtml += `
+            <tr class="hover:bg-blue-50 transition-colors duration-200 border-b border-gray-100">
+              <td class="py-3 px-6 text-gray-700">${index + 1}</td>
+              <td class="py-3 px-6 text-gray-700 font-mono text-sm">${user.user_id}</td>
+              <td class="py-3 px-6 text-gray-700">${user.display_name}</td>
+              <td class="py-3 px-6">
+                <input 
+                  type="text" 
+                  value="${user.code || ''}" 
+                  onchange="window.updateUserCode('${user.user_id}', this.value)"
+                  class="code-input"
+                  placeholder="Nhập mã (khuyến mãi, tên, v.v.)"
+                />
+              </td>
+              <td class="py-3 px-6">
+                <button 
+                  onclick="window.removeUser('${user.user_id}')"
+                  class="delete-btn"
+                  title="Xóa user này khỏi danh sách"
+                >
+                  Xóa
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+        tableHtml += `
+              </tbody>
+            </table>
+          </div>
+          <p class="mt-4 text-gray-600 font-medium">Tổng số: ${importedUsers.length}</p>
+        `;
+        setUserListResponse(tableHtml);
+
+        alert(`Đã nhập thành công ${importedUsers.length} người dùng từ file Excel!`);
+      } catch (error) {
+        console.error('Import error:', error);
+        alert("Lỗi khi đọc file Excel! Vui lòng kiểm tra định dạng file.");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }, []);
+
+  // Handle import file selection
+  const handleImportFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      importUsers(file);
+    }
+    // Reset input value to allow selecting the same file again
+    e.target.value = '';
+  }, [importUsers]);
+
   // Load access token, message history, and user ID from localStorage
   useEffect(() => {
     const savedToken = localStorage.getItem("zalo_access_token");
@@ -130,13 +392,32 @@ const App: React.FC = () => {
     }
   }, [userId]);
 
-  // Add global copy function
+  // Fix the global window function declarations
   useEffect(() => {
+    // Define global copy function for inline onclick handlers
     (window as any).copyAttachmentId = copyAttachmentId;
+
+    // Define global clear function
+    (window as any).clearMessageHistory = () => {
+      setMessageHistory([]);
+      localStorage.removeItem("message_history");
+      alert("Đã xóa lịch sử gửi tin!");
+    };
+
+    // Define global updateUserCode function
+    (window as any).updateUserCode = updateUserCode;
+
+    // Define global removeUser function
+    (window as any).removeUser = removeUser;
+
+    // Cleanup
     return () => {
       delete (window as any).copyAttachmentId;
+      delete (window as any).clearMessageHistory;
+      delete (window as any).updateUserCode;
+      delete (window as any).removeUser;
     };
-  }, [copyAttachmentId]);
+  }, [copyAttachmentId, updateUserCode, removeUser]);
 
   // Handle table row changes
   const handleTableRowChange = (
@@ -202,6 +483,45 @@ const App: React.FC = () => {
     handleFile(file);
   };
 
+  // Fetch user detail from Zalo API
+  const fetchUserDetail = async (userId: string): Promise<UserDetail | null> => {
+    try {
+      const queryData = { user_id: userId };
+      const queryString = `data=${encodeURIComponent(JSON.stringify(queryData))}`;
+      
+      const response = await fetch(
+        `https://openapi.zalo.me/v3.0/oa/user/detail?${queryString}`,
+        {
+          method: "GET",
+          headers: {
+            access_token: accessToken,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const result: ApiResponse = await response.json();
+      
+      if (result.error === 0 && result.data) {
+        return {
+          user_id: result.data.user_id || userId,
+          display_name: result.data.display_name || "Không có tên",
+          user_alias: result.data.user_alias || "",
+          avatar: result.data.avatar || "",
+          user_is_follower: result.data.user_is_follower || false,
+          user_last_interaction_date: result.data.user_last_interaction_date || ""
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error(`Error fetching user detail for ${userId}:`, error);
+      return null;
+    }
+  };
+
   // Fetch user list directly from Zalo API
   const fetchUsers = async () => {
     if (!accessToken.trim()) {
@@ -247,6 +567,24 @@ const App: React.FC = () => {
         result.data?.users &&
         result.data.users.length > 0
       ) {
+        // Fetch user details for each user
+        setUserListResponse(
+          '<h3 class="text-lg font-semibold text-blue-600">Đang tải thông tin chi tiết...</h3>'
+        );
+        
+        const usersWithDetails: User[] = [];
+        for (const user of result.data.users) {
+          const userDetail = await fetchUserDetail(user.user_id);
+          usersWithDetails.push({
+            user_id: user.user_id,
+            display_name: userDetail?.display_name || "Không có tên",
+            code: ""
+          });
+        }
+        
+        setUsers(usersWithDetails);
+        setUserIds(usersWithDetails.map(user => user.user_id));
+
         let tableHtml = `
           <h3 class="text-lg font-semibold text-gray-700 mb-4">Danh sách người dùng</h3>
           <div class="overflow-x-auto">
@@ -255,17 +593,37 @@ const App: React.FC = () => {
                 <tr class="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
                   <th class="py-4 px-6 text-left font-semibold">STT</th>
                   <th class="py-4 px-6 text-left font-semibold">User ID</th>
+                  <th class="py-4 px-6 text-left font-semibold">Tên hiển thị</th>
+                  <th class="py-4 px-6 text-left font-semibold">Code</th>
+                  <th class="py-4 px-6 text-left font-semibold">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
         `;
-        result.data.users.forEach((user, index) => {
+        usersWithDetails.forEach((user, index) => {
           tableHtml += `
             <tr class="hover:bg-blue-50 transition-colors duration-200 border-b border-gray-100">
               <td class="py-3 px-6 text-gray-700">${index + 1}</td>
-              <td class="py-3 px-6 text-gray-700 font-mono text-sm">${
-                user.user_id
-              }</td>
+              <td class="py-3 px-6 text-gray-700 font-mono text-sm">${user.user_id}</td>
+              <td class="py-3 px-6 text-gray-700">${user.display_name}</td>
+              <td class="py-3 px-6">
+                <input 
+                  type="text" 
+                  value="${user.code || ''}" 
+                  onchange="window.updateUserCode('${user.user_id}', this.value)"
+                  class="code-input"
+                  placeholder="Nhập mã (khuyến mãi, tên, v.v.)"
+                />
+              </td>
+              <td class="py-3 px-6">
+                <button 
+                  onclick="window.removeUser('${user.user_id}')"
+                  class="delete-btn"
+                  title="Xóa user này khỏi danh sách"
+                >
+                  Xóa️
+                </button>
+              </td>
             </tr>
           `;
         });
@@ -276,7 +634,6 @@ const App: React.FC = () => {
           <p class="mt-4 text-gray-600 font-medium">Tổng số: ${result.data.total}</p>
         `;
         setUserListResponse(tableHtml);
-        setUserIds(result.data.users.map((user) => user.user_id));
       } else if (
         result.error === 0 &&
         (!result.data?.users || result.data.users.length === 0)
@@ -375,16 +732,28 @@ const App: React.FC = () => {
       return false;
     }
 
+    // Get user data from users array
+    const currentUser = users.find(user => user.user_id === userId);
+    
     let tableContentParsed: TableRow[] = [];
     if (enableTable) {
-      tableContentParsed = tableRows.filter(
-        (row) => row.key.trim() && row.value.trim()
-      );
-      if (!tableContentParsed.length) {
-        setMessageResponse(
-          '<h3 class="text-lg font-semibold text-red-600">Lỗi:</h3><pre class="bg-red-50 p-4 rounded-xl text-red-700 text-sm">Vui lòng nhập ít nhất một hàng trong bảng khi bật nội dung bảng.</pre>'
+      if (currentUser && currentUser.display_name && currentUser.code) {
+        // Use data from user list (name and code)
+        tableContentParsed = [
+          { key: "Tên khách hàng", value: currentUser.display_name },
+          { key: "Mã ưu đãi", value: currentUser.code }
+        ];
+      } else {
+        // Fall back to manual input if user data not available
+        tableContentParsed = tableRows.filter(
+          (row) => row.key.trim() && row.value.trim()
         );
-        return false;
+        if (!tableContentParsed.length) {
+          setMessageResponse(
+            '<h3 class="text-lg font-semibold text-red-600">Lỗi:</h3><pre class="bg-red-50 p-4 rounded-xl text-red-700 text-sm">Vui lòng nhập ít nhất một hàng trong bảng hoặc đảm bảo người dùng có tên và code.</pre>'
+          );
+          return false;
+        }
       }
     }
 
@@ -556,7 +925,7 @@ const App: React.FC = () => {
     alert("Đã xóa lịch sử gửi tin!");
   };
 
-  // Render message history table
+  // Fix the renderMessageHistory function
   const renderMessageHistory = () => {
     if (messageHistory.length === 0) {
       return `
@@ -570,7 +939,7 @@ const App: React.FC = () => {
       <div class="overflow-x-auto">
         <table class="w-full bg-white rounded-xl shadow-lg">
           <thead>
-            <tr class="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+            <tr class="bg-gradient-to-r from-gray-800 to-black text-white">
               <th class="py-4 px-6 text-left font-semibold">STT</th>
               <th class="py-4 px-6 text-left font-semibold">User ID</th>
               <th class="py-4 px-6 text-left font-semibold">Thời gian gửi</th>
@@ -581,11 +950,9 @@ const App: React.FC = () => {
     messageHistory.forEach((entry, index) => {
       const date = new Date(entry.timestamp).toLocaleString("vi-VN");
       tableHtml += `
-        <tr class="hover:bg-blue-50 transition-colors duration-200 border-b border-gray-100">
+        <tr class="hover:bg-gray-50 transition-colors duration-200 border-b border-gray-100">
           <td class="py-3 px-6 text-gray-700">${index + 1}</td>
-          <td class="py-3 px-6 text-gray-700 font-mono text-sm">${
-            entry.user_id
-          }</td>
+          <td class="py-3 px-6 text-gray-700 font-mono text-sm">${entry.user_id}</td>
           <td class="py-3 px-6 text-gray-700">${date}</td>
         </tr>
       `;
@@ -594,18 +961,10 @@ const App: React.FC = () => {
           </tbody>
         </table>
       </div>
-      <button class="btn-danger w-full mt-4" onclick="clearMessageHistory()">Xóa lịch sử</button>
+      <button class="btn-primary w-full mt-4 background-red" onclick="window.clearMessageHistory()">Xóa lịch sử</button>
     `;
     return tableHtml;
   };
-
-  // Expose clearMessageHistory to global scope
-  useEffect(() => {
-    (window as any).clearMessageHistory = clearMessageHistory;
-    return () => {
-      delete (window as any).clearMessageHistory;
-    };
-  }, []);
 
   // Handle modal
   const openModal = () => setIsModalOpen(true);
@@ -626,13 +985,12 @@ const App: React.FC = () => {
         {/* Config Icon */}
         <button
           onClick={openModal}
-          className="absolute text-gray-600 hover:text-gray-800"
+          className="absolute text-gray-600 hover:text-gray-800 w-10 h-10 flex items-center justify-center"
           title="Cấu hình User ID"
           style={{
             fontSize: "24px",
             top: "20px",
             right: "20px",
-            padding: "8px",
           }}
         >
           🔑
@@ -640,8 +998,31 @@ const App: React.FC = () => {
 
         {/* Modal */}
         {isModalOpen && (
-          <div className="modal-overlay">
-            <div className="modal-content">
+          <div
+            style={{
+              position: "fixed",
+              maxHeight: "100vh",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: "white",
+                padding: "2rem",
+                borderRadius: "1rem",
+                maxWidth: "400px",
+                width: "90%",
+                boxShadow: "0 20px 40px rgba(0, 0, 0, 0.2)",
+              }}
+            >
               <h2 className="text-xl font-semibold mb-4 text-center">
                 Cấu hình User ID
               </h2>
@@ -716,137 +1097,39 @@ const App: React.FC = () => {
         <div className="animate-fade-in">
           {/* User List Tab */}
           {activeTab === "userList" && (
-            <div style={{ marginBottom: "24px" }}>
-              <h2
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: "700",
-                  color: "#1f2937",
-                  marginBottom: "24px",
-                  textAlign: "left",
-                }}
-              >
-                Lấy danh sách người dùng
-              </h2>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-                  gap: "16px",
-                  marginBottom: "24px",
-                }}
-              >
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "1rem",
-                      fontWeight: "600",
-                      color: "#374151",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    Vị trí bắt đầu (Offset)
-                  </label>
+            <div className="mb-6">
+              <h2 className="section-header">Lấy danh sách người dùng</h2>
+
+              <div className="flex items-end gap-6 mb-8 flex-nowrap overflow-auto">
+                <div className="flex-none">
+                  <label className="block form-label mb-3">Vị trí bắt đầu (Offset)</label>
                   <input
                     type="number"
                     value={offset}
                     onChange={(e) => setOffset(Number(e.target.value))}
                     min="0"
-                    style={{
-                      width: "90%",
-                      padding: "12px",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "8px",
-                      fontSize: "1rem",
-                      transition: "border-color 0.2s, box-shadow 0.2s",
-                      outline: "none",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#3b82f6";
-                      e.target.style.boxShadow =
-                        "0 0 0 4px rgba(59, 130, 246, 0.2)";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#d1d5db";
-                      e.target.style.boxShadow = "none";
-                    }}
+                    className="input-field"
                   />
                 </div>
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "1rem",
-                      fontWeight: "600",
-                      color: "#374151",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    Số lượng (Tối đa 50)
-                  </label>
+
+                <div className="flex-none">
+                  <label className="block form-label mb-3">Số lượng (Tối đa 50)</label>
                   <input
                     type="number"
                     value={count}
-                    onChange={(e) =>
-                      setCount(Math.min(Number(e.target.value), 50))
-                    }
+                    onChange={(e) => setCount(Math.min(Number(e.target.value), 50))}
                     min="1"
                     max="50"
-                    style={{
-                      width: "90%",
-                      padding: "12px",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "8px",
-                      fontSize: "1rem",
-                      transition: "border-color 0.2s, box-shadow 0.2s",
-                      outline: "none",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#3b82f6";
-                      e.target.style.boxShadow =
-                        "0 0 0 4px rgba(59, 130, 246, 0.2)";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#d1d5db";
-                      e.target.style.boxShadow = "none";
-                    }}
+                    className="input-field"
                   />
                 </div>
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "1rem",
-                      fontWeight: "600",
-                      color: "#374151",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    Thời gian tương tác cuối
-                  </label>
+
+                <div className="flex-none">
+                  <label className="block form-label mb-3">Thời gian tương tác cuối</label>
                   <select
                     value={lastInteraction}
                     onChange={(e) => setLastInteraction(e.target.value)}
-                    style={{
-                      width: "90%",
-                      padding: "12px",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "8px",
-                      fontSize: "1rem",
-                      transition: "border-color 0.2s, box-shadow 0.2s",
-                      outline: "none",
-                      backgroundColor: "#fff",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#3b82f6";
-                      e.target.style.boxShadow =
-                        "0 0 0 4px rgba(59, 130, 246, 0.2)";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#d1d5db";
-                      e.target.style.boxShadow = "none";
-                    }}
+                    className="input-field"
                   >
                     <option value="TODAY">Hôm nay</option>
                     <option value="YESTERDAY">Hôm qua</option>
@@ -855,57 +1138,23 @@ const App: React.FC = () => {
                     <option value="custom">Tùy chỉnh khoảng thời gian</option>
                   </select>
                 </div>
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "1rem",
-                      fontWeight: "600",
-                      color: "#374151",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    Là người theo dõi
-                  </label>
+
+                <div className="flex-none">
+                  <label className="block form-label mb-3">Là người theo dõi</label>
                   <select
                     value={isFollower}
                     onChange={(e) => setIsFollower(e.target.value)}
-                    style={{
-                      width: "90%",
-                      padding: "12px",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "8px",
-                      fontSize: "1rem",
-                      transition: "border-color 0.2s, box-shadow 0.2s",
-                      outline: "none",
-                      backgroundColor: "#fff",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#3b82f6";
-                      e.target.style.boxShadow =
-                        "0 0 0 4px rgba(59, 130, 246, 0.2)";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#d1d5db";
-                      e.target.style.boxShadow = "none";
-                    }}
+                    className="input-field"
                   >
                     <option value="true">Có</option>
                     <option value="false">Không</option>
                   </select>
                 </div>
               </div>
+
               {lastInteraction === "custom" && (
-                <div style={{ marginBottom: "24px" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "1rem",
-                      fontWeight: "600",
-                      color: "#374151",
-                      marginBottom: "8px",
-                    }}
-                  >
+                <div className="mb-8">
+                  <label className="block form-label mb-3">
                     Khoảng thời gian tùy chỉnh (YYYY_MM_DD:YYYY_MM_DD)
                   </label>
                   <input
@@ -913,54 +1162,61 @@ const App: React.FC = () => {
                     value={dateRange}
                     onChange={(e) => setDateRange(e.target.value)}
                     placeholder="ví dụ: 2024_05_22:2024_05_23"
-                    style={{
-                      width: "100%",
-                      padding: "12px",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "8px",
-                      fontSize: "1rem",
-                      transition: "border-color 0.2s, box-shadow 0.2s",
-                      outline: "none",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#3b82f6";
-                      e.target.style.boxShadow =
-                        "0 0 0 4px rgba(59, 130, 246, 0.2)";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#d1d5db";
-                      e.target.style.boxShadow = "none";
-                    }}
+                    className="input-field"
                   />
                 </div>
               )}
+
               <button
                 onClick={fetchUsers}
-                style={{
-                  width: "30%",
-                  padding: "16px 12px",
-                  background: "linear-gradient(90deg, #171818ff, #3b3b3bff)",
-                  color: "white",
-                  fontWeight: "600",
-                    fontSize: "1rem",
-                  border: "none",
-                  borderRadius: "8px",
-                  textAlign: "center",
-                  display: "block",
-                  margin: "0 auto",
-                  cursor: "pointer",
-                  transition: "background 0.2s",
-                  marginBottom: "24px",
-                }}
+                className="btn-primary mx-auto block mb-8"
+                style={{ width: "300px" }}
               >
                 Lấy danh sách người dùng
               </button>
+
+              {/* Export/Import buttons */}
+              <div className="flex gap-4 justify-center mb-8">
+                <button
+                  onClick={exportUsers}
+                  className="btn-secondary"
+                  disabled={users.length === 0}
+                  title={users.length === 0 ? "Không có dữ liệu để xuất" : "Xuất danh sách ra file Excel"}
+                >
+                  � Xuất Excel
+                </button>
+                <label className="btn-secondary cursor-pointer">
+                  📥 Nhập Excel
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleImportFile}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* Info about Excel format */}
+              <div className="excel-info-box">
+                <h4>Định dạng file Excel</h4>
+                <ul className="excel-info-list">
+                  <li>
+                    <strong>Xuất:</strong> File <span className="excel-format-highlight">.xlsx</span> với các cột: 
+                    STT, User ID, Tên hiển thị, Code
+                  </li>
+                  <li>
+                    <strong>Nhập:</strong> Chấp nhận file <span className="excel-format-highlight">.xlsx</span>, 
+                    <span className="excel-format-highlight">.xls</span>, <span className="excel-format-highlight">.csv</span> với cột bắt buộc là 'User ID'
+                  </li>
+                  <li>
+                    <strong>Lưu ý:</strong> File nhập sẽ thay thế hoàn toàn danh sách hiện tại
+                  </li>
+                </ul>
+              </div>
+
               {userListResponse && (
                 <div
-                  style={{
-                    width: "100%",
-                    marginTop: "16px",
-                  }}
+                  className="response-container"
                   dangerouslySetInnerHTML={{ __html: userListResponse }}
                 />
               )}
@@ -987,18 +1243,22 @@ const App: React.FC = () => {
                     accept="image/*"
                     onChange={(e) => handleFile(e.target.files?.[0])}
                     className="input-file"
+                    id="file-input"
                   />
-                  <p className="drop-text">
-                    Kéo và thả ảnh vào đây hoặc nhấn để chọn ảnh
-                  </p>
+                  <div className="upload-icon">📁</div>
+                  <div className="drop-text">
+                    <div>Kéo và thả ảnh vào đây</div>
+                    <div className="drop-text-secondary">hoặc nhấn để chọn từ máy tính</div>
+                  </div>
                 </div>
                 {previewImage && (
-                  <div className="preview-container">
-                    <h3 className="preview-title">Xem trước ảnh</h3>
+                  <div className="mt-4">
+                    <h3 className="text-lg font-semibold mb-2">Xem trước ảnh</h3>
                     <img
                       src={previewImage}
                       alt="Preview"
-                      className="preview-image"
+                      className="max-w-full h-auto rounded-lg shadow-lg"
+                      style={{ maxHeight: "300px" }}
                     />
                   </div>
                 )}
@@ -1014,9 +1274,8 @@ const App: React.FC = () => {
           {/* Send Message Tab */}
           {activeTab === "sendMessage" && (
             <div>
-              <h2 className="section-header">
-                Gửi tin nhắn từ danh sách đã lấy
-              </h2>
+              <h2 className="section-header">Gửi tin nhắn cho khách hàng</h2>
+
               <div className="space-y-6 mb-8">
                 <div>
                   <label className="block form-label mb-3">
@@ -1030,6 +1289,7 @@ const App: React.FC = () => {
                     className="input-field"
                   />
                 </div>
+
                 <div>
                   <label className="block form-label mb-3">
                     Nội dung tiêu đề
@@ -1041,6 +1301,7 @@ const App: React.FC = () => {
                     className="input-field"
                   />
                 </div>
+
                 <div>
                   <label className="block form-label mb-3">
                     Nội dung tin nhắn
@@ -1052,6 +1313,7 @@ const App: React.FC = () => {
                     className="input-field resize-vertical"
                   />
                 </div>
+
                 <div>
                   <div className="flex items-center mb-3">
                     <input
@@ -1060,13 +1322,22 @@ const App: React.FC = () => {
                       onChange={(e) => setEnableTable(e.target.checked)}
                       className="mr-2"
                     />
-                    <label className="form-label" style={{ marginTop: "7px" }}>
+                    <label className="form-label" style={{marginTop: "8px", color: "blueviolet"}}>
                       Bật nội dung bảng
                     </label>
                   </div>
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                    <h4 className="font-semibold text-blue-800 mb-2">📋 Thông tin bảng sẽ được tự động lấy từ:</h4>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      <li><strong>Tên khách hàng:</strong> Tên hiển thị từ danh sách người dùng</li>
+                      <li><strong>Mã ưu đãi:</strong> Code đã nhập trong bảng danh sách</li>
+                      <li><strong>Dự phòng:</strong> Nếu thiếu thông tin, sẽ dùng giá trị nhập thủ công bên dưới</li>
+                    </ul>
+                  </div>
+
                   <p className="text-sm text-gray-500 mb-3">
-                    Ví dụ: Nhãn: Tên khách hàng, Giá trị: Duyên; Nhãn: Mã ưu
-                    đãi, Giá trị: ACBDBMN
+                    Nhập thủ công <span style={{color: "#890c0cff"}}>(chỉ dùng khi người dùng chưa có tên hoặc code trong danh sách) </span>:
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {tableRows.map((row, index) => (
@@ -1095,6 +1366,7 @@ const App: React.FC = () => {
                     ))}
                   </div>
                 </div>
+
                 <div>
                   <label className="block form-label mb-3">
                     Nội dung chân trang
@@ -1107,20 +1379,41 @@ const App: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {/* Statistics about users with complete data */}
+              {users.length > 0 && (
+                <div className="bg-green-50 p-4 rounded-lg mb-6">
+                  <h4 className="font-semibold text-green-800 mb-2">📊 Thống kê dữ liệu:</h4>
+                  <div className="text-sm text-green-700 space-y-1">
+                    <p>• <strong>Tổng số người dùng:</strong> {users.length}</p>
+                    <p>• <strong>Có đầy đủ tên và code:</strong> {users.filter(u => u.display_name && u.code && u.code.trim()).length}</p>
+                    <p>• <strong>Chưa có code:</strong> {users.filter(u => !u.code || !u.code.trim()).length}</p>
+                  </div>
+                  {users.filter(u => !u.code || !u.code.trim()).length > 0 && (
+                    <p className="text-yellow-700 text-sm mt-2">
+                      ⚠️ Những người dùng chưa có code sẽ nhận thông tin từ phần nhập thủ công
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-4 mb-8">
                 <button
                   onClick={sendMessagesToCustomers}
-                  className="btn-primary w-3/5"
+                  className="btn-primary"
+                  style={{ width: "70%" }}
                 >
                   Gửi cho khách hàng
                 </button>
                 <button
                   onClick={sendMessageToSelf}
-                  className="btn-primary w-2/5"
+                  className="btn-primary"
+                  style={{ width: "30%" }}
                 >
                   Gửi cho bạn (test)
                 </button>
               </div>
+
               {messageResponse && (
                 <div
                   className="response-container"

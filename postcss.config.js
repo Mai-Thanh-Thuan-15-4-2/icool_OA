@@ -1,6 +1,7 @@
+// PostCSS config as ES module (package.json sets "type": "module")
 export default {
   plugins: {
-    tailwindcss: {}, // Sử dụng plugin tailwindcss trực tiếp
+    '@tailwindcss/postcss': {},
     autoprefixer: {},
   },
-}
+};
