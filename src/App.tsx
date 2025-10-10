@@ -76,6 +76,41 @@ const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [attachmentHistory, setAttachmentHistory] = useState<string[]>([]);
+
+  // Load attachment history from localStorage on component mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('attachmentHistory');
+    if (savedHistory) {
+      try {
+        const history = JSON.parse(savedHistory);
+        setAttachmentHistory(history);
+        // Set the most recent attachment ID if available
+        if (history.length > 0) {
+          setAttachmentId(history[0]);
+        }
+      } catch (error) {
+        console.error('Error loading attachment history:', error);
+      }
+    }
+  }, []);
+
+  // Function to save attachment ID to localStorage history
+  const saveAttachmentToHistory = (newAttachmentId: string) => {
+    setAttachmentHistory(prevHistory => {
+      // Remove if already exists to avoid duplicates
+      const filteredHistory = prevHistory.filter(id => id !== newAttachmentId);
+      // Add new ID to the beginning
+      const newHistory = [newAttachmentId, ...filteredHistory];
+      // Keep only the latest 3 IDs
+      const limitedHistory = newHistory.slice(0, 3);
+      
+      // Save to localStorage
+      localStorage.setItem('attachmentHistory', JSON.stringify(limitedHistory));
+      
+      return limitedHistory;
+    });
+  };
 
   // Memoize the copy function
   const copyAttachmentId = useCallback((id: string) => {
@@ -698,6 +733,8 @@ const App: React.FC = () => {
           </div>
         `);
         setAttachmentId(attachmentIdValue);
+        // Save to history
+        saveAttachmentToHistory(attachmentIdValue);
       } else {
         setUploadResponse(
           `<h3 class="text-lg font-semibold text-red-600">Lỗi:</h3><pre class="bg-red-50 p-4 rounded-xl text-red-700 text-sm overflow-x-auto">${JSON.stringify(
@@ -1275,6 +1312,40 @@ const App: React.FC = () => {
                   </div>
                 )}
               </div>
+              
+              {/* Attachment History Section */}
+              {attachmentHistory.length > 0 && (
+                <div className="attachment-history-section">
+                  <h3 className="attachment-history-title">📋 Lịch sử ID ảnh (3 gần nhất)</h3>
+                  <div className="attachment-history-list">
+                    {attachmentHistory.map((id, index) => (
+                      <div key={id} className="attachment-history-item">
+                        <div className="attachment-history-content">
+                          <span className="attachment-history-index">#{index + 1}</span>
+                          <span className="attachment-history-id">{id}</span>
+                          <button
+                            onClick={() => {
+                              setAttachmentId(id);
+                              copyAttachmentId(id);
+                            }}
+                            className="attachment-history-btn"
+                            title="Sử dụng và copy ID này"
+                          >
+                            Sử dụng
+                          </button>
+                        </div>
+                        {index === 0 && (
+                          <span className="attachment-history-latest">Mới nhất</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="attachment-history-note">
+                    💡 Click "Sử dụng" để copy ID và áp dụng vào form gửi tin nhắn
+                  </div>
+                </div>
+              )}
+
               {uploadResponse && (
                 <div
                   className="response-container"
