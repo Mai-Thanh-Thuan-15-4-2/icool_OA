@@ -737,23 +737,35 @@ const App: React.FC = () => {
     
     let tableContentParsed: TableRow[] = [];
     if (enableTable) {
-      if (currentUser && currentUser.display_name && currentUser.code) {
-        // Use data from user list (name and code)
-        tableContentParsed = [
-          { key: "Tên khách hàng", value: currentUser.display_name },
-          { key: "Mã ưu đãi", value: currentUser.code }
-        ];
-      } else {
-        // Fall back to manual input if user data not available
-        tableContentParsed = tableRows.filter(
-          (row) => row.key.trim() && row.value.trim()
-        );
-        if (!tableContentParsed.length) {
-          setMessageResponse(
-            '<h3 class="text-lg font-semibold text-red-600">Lỗi:</h3><pre class="bg-red-50 p-4 rounded-xl text-red-700 text-sm">Vui lòng nhập ít nhất một hàng trong bảng hoặc đảm bảo người dùng có tên và code.</pre>'
-          );
-          return false;
+      // Always use custom labels from tableRows
+      const nameLabel = tableRows[0]?.key || "Tên khách hàng";
+      const codeLabel = tableRows[1]?.key || "Mã ưu đãi";
+      
+      // Get name: prioritize user data, fallback to manual input
+      const userName = currentUser?.display_name || tableRows[0]?.value || "";
+      
+      // Get code: prioritize user data, fallback to manual input  
+      const userCode = (currentUser?.code && currentUser.code.trim()) ? currentUser.code : (tableRows[1]?.value || "");
+      
+      // Build table content if we have at least name or code
+      if (userName.trim() || userCode.trim()) {
+        tableContentParsed = [];
+        
+        // Add name row if we have name
+        if (userName.trim()) {
+          tableContentParsed.push({ key: nameLabel, value: userName });
         }
+        
+        // Add code row if we have code
+        if (userCode.trim()) {
+          tableContentParsed.push({ key: codeLabel, value: userCode });
+        }
+      } else {
+        // No data available at all
+        setMessageResponse(
+          '<h3 class="text-lg font-semibold text-red-600">Lỗi:</h3><pre class="bg-red-50 p-4 rounded-xl text-red-700 text-sm">Vui lòng nhập ít nhất tên hoặc code trong bảng thủ công hoặc đảm bảo người dùng có thông tin.</pre>'
+        );
+        return false;
       }
     }
 
@@ -1276,9 +1288,9 @@ const App: React.FC = () => {
             <div>
               <h2 className="section-header">Gửi tin nhắn cho khách hàng</h2>
 
-              <div className="space-y-6 mb-8">
-                <div>
-                  <label className="block form-label mb-3">
+              <div className="message-form-container">
+                <div className="form-group">
+                  <label className="block form-label">
                     ID đính kèm (từ Tải ảnh lên)
                   </label>
                   <input
@@ -1286,131 +1298,137 @@ const App: React.FC = () => {
                     value={attachmentId}
                     onChange={(e) => setAttachmentId(e.target.value)}
                     placeholder="Nhập ID đính kèm"
-                    className="input-field"
+                    className="input-field compact"
                   />
                 </div>
 
-                <div>
-                  <label className="block form-label mb-3">
+                <div className="form-group">
+                  <label className="block form-label">
                     Nội dung tiêu đề
                   </label>
                   <input
                     type="text"
                     value={headerContent}
                     onChange={(e) => setHeaderContent(e.target.value)}
-                    className="input-field"
+                    className="input-field compact"
                   />
                 </div>
 
-                <div>
-                  <label className="block form-label mb-3">
+                <div className="form-group">
+                  <label className="block form-label">
                     Nội dung tin nhắn
                   </label>
                   <textarea
                     value={messageContent}
                     onChange={(e) => setMessageContent(e.target.value)}
-                    rows={4}
-                    className="input-field resize-vertical"
+                    rows={3}
+                    className="input-field compact resize-vertical"
                   />
                 </div>
 
-                <div>
-                  <div className="flex items-center mb-3">
+                <div className="form-group table-section">
+                  <div className="table-checkbox">
                     <input
                       type="checkbox"
                       checked={enableTable}
                       onChange={(e) => setEnableTable(e.target.checked)}
                       className="mr-2"
                     />
-                    <label className="form-label" style={{marginTop: "8px", color: "blueviolet"}}>
+                    <label className="form-label table-label">
                       Bật nội dung bảng
                     </label>
                   </div>
                   
-                  <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                    <h4 className="font-semibold text-blue-800 mb-2">📋 Thông tin bảng sẽ được tự động lấy từ:</h4>
-                    <ul className="text-sm text-blue-700 space-y-1">
-                      <li><strong>Tên khách hàng:</strong> Tên hiển thị từ danh sách người dùng</li>
-                      <li><strong>Mã ưu đãi:</strong> Code đã nhập trong bảng danh sách</li>
-                      <li><strong>Dự phòng:</strong> Nếu thiếu thông tin, sẽ dùng giá trị nhập thủ công bên dưới</li>
-                    </ul>
+                  <div className="table-info-compact">
+                    <h4 className="table-info-title">📋 Thông tin bảng tự động:</h4>
+                    <div className="table-info-grid">
+                      <div><strong>Nhãn:</strong> Từ ô bên dưới</div>
+                      <div><strong>Tên:</strong> Danh sách → dự phòng</div>
+                      <div><strong>Code:</strong> Cột Code → dự phòng</div>
+                      <div><strong>Hiển thị:</strong> Dòng có dữ liệu</div>
+                    </div>
                   </div>
 
-                  <p className="text-sm text-gray-500 mb-3">
-                    Nhập thủ công <span style={{color: "#890c0cff"}}>(chỉ dùng khi người dùng chưa có tên hoặc code trong danh sách) </span>:
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {tableRows.map((row, index) => (
-                      <div key={index} className="flex gap-4">
-                        <input
-                          type="text"
-                          value={row.key}
-                          onChange={(e) =>
-                            handleTableRowChange(index, "key", e.target.value)
-                          }
-                          placeholder="Nhãn"
-                          className="input-field flex-1"
-                          disabled={!enableTable}
-                        />
-                        <input
-                          type="text"
-                          value={row.value}
-                          onChange={(e) =>
-                            handleTableRowChange(index, "value", e.target.value)
-                          }
-                          placeholder="Giá trị"
-                          className="input-field flex-1"
-                          disabled={!enableTable}
-                        />
-                      </div>
-                    ))}
+                  <div className="smart-table-tip-compact">
+                    <span className="tip-icon">💡</span>
+                    <strong>Ví dụ:</strong> Không có code <span className="tip-arrow">→</span> dùng ô "Giá trị" thứ 2
+                  </div>
+
+                  <div className="table-config">
+                    <p className="table-config-label">Tùy chỉnh nhãn và dữ liệu dự phòng:</p>
+                    <div className="table-rows-grid">
+                      {tableRows.map((row, index) => (
+                        <div key={index} className="table-row-inputs">
+                          <input
+                            type="text"
+                            value={row.key}
+                            onChange={(e) =>
+                              handleTableRowChange(index, "key", e.target.value)
+                            }
+                            placeholder="Nhãn"
+                            className="input-field compact table-input"
+                            style={{width: "90%"}}
+                            disabled={!enableTable}
+                          />
+                          <input
+                            type="text"
+                            value={row.value}
+                            onChange={(e) =>
+                              handleTableRowChange(index, "value", e.target.value)
+                            }
+                            placeholder="Giá trị"
+                             style={{width: "90%"}}
+                            className="input-field compact table-input"
+                            disabled={!enableTable}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block form-label mb-3">
+                <div className="form-group">
+                  <label className="block form-label">
                     Nội dung chân trang
                   </label>
                   <input
                     type="text"
                     value={footerContent}
                     onChange={(e) => setFooterContent(e.target.value)}
-                    className="input-field"
+                    className="input-field compact"
                   />
                 </div>
               </div>
 
               {/* Statistics about users with complete data */}
               {users.length > 0 && (
-                <div className="bg-green-50 p-4 rounded-lg mb-6">
-                  <h4 className="font-semibold text-green-800 mb-2">📊 Thống kê dữ liệu:</h4>
-                  <div className="text-sm text-green-700 space-y-1">
-                    <p>• <strong>Tổng số người dùng:</strong> {users.length}</p>
-                    <p>• <strong>Có đầy đủ tên và code:</strong> {users.filter(u => u.display_name && u.code && u.code.trim()).length}</p>
-                    <p>• <strong>Chưa có code:</strong> {users.filter(u => !u.code || !u.code.trim()).length}</p>
+                <div className="stats-compact">
+                  <h4 className="stats-title">📊 Thống kê dữ liệu:</h4>
+                  <div className="stats-grid">
+                    <div><strong>Tổng:</strong> {users.length}</div>
+                    <div><strong>Đủ data:</strong> {users.filter(u => u.display_name && u.code && u.code.trim()).length}</div>
+                    <div><strong>Thiếu code:</strong> {users.filter(u => !u.code || !u.code.trim()).length}</div>
                   </div>
                   {users.filter(u => !u.code || !u.code.trim()).length > 0 && (
-                    <p className="text-yellow-700 text-sm mt-2">
-                      ⚠️ Những người dùng chưa có code sẽ nhận thông tin từ phần nhập thủ công
+                    <p className="stats-warning">
+                      ⚠️ Người dùng thiếu code sẽ nhận thông tin từ phần nhập thủ công của code
                     </p>
                   )}
                 </div>
               )}
 
-              <div className="flex gap-4 mb-8">
+              <div className="message-actions">
                 <button
                   onClick={sendMessagesToCustomers}
-                  className="btn-primary"
-                  style={{ width: "70%" }}
+                  className="btn-primary btn-large"
                 >
                   Gửi cho khách hàng
                 </button>
                 <button
                   onClick={sendMessageToSelf}
-                  className="btn-primary"
-                  style={{ width: "30%" }}
+                  className="btn-primary btn-small"
                 >
-                  Gửi cho bạn (test)
+                  Gửi cho bạn (Tesst)
                 </button>
               </div>
 

@@ -68,10 +68,10 @@ body {
 
 /* Form labels */
 .form-label {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #1a1a1a;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   display: block;
   letter-spacing: 0.01em;
 }
@@ -79,14 +79,20 @@ body {
 /* Input fields */
 .input-field {
   width: 100%;
-  padding: 14px 18px;
+  padding: 12px 16px;
   border: 1.5px solid #e5e5e5;
-  border-radius: 12px;
-  font-size: 0.95rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
   transition: all 0.3s ease;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   background: #ffffff;
   color: #1a1a1a;
+}
+
+.input-field.compact {
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
 }
 
 .input-field:focus {
@@ -1139,8 +1145,8 @@ button:focus-visible,
 
 /* Excel format info box styling */
 .excel-info-box {
-  background: linear-gradient(135deg, #fefce8 0%, #c7fafe 50%, #8ad1fd 100%);
-  border: 2px solid #f59e0b;
+  background: linear-gradient(135deg, #fefffe 0%, #f8fafc 50%, #f1f5f9 100%);
+  border: 1.5px solid #e2e8f0;
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 32px;
@@ -1154,12 +1160,12 @@ button:focus-visible,
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #f59e0b 0%, #d97706 50%, #f59e0b 100%);
+  height: 3px;
+  background: linear-gradient(90deg, #cbd5e1 0%, #94a3b8 50%, #cbd5e1 100%);
 }
 
 .excel-info-box h4 {
-  color: #92400e;
+  color: #475569;
   font-size: 1.1rem;
   font-weight: 700;
   margin-bottom: 16px;
@@ -1171,14 +1177,14 @@ button:focus-visible,
 .excel-info-box h4::before {
   content: '📊';
   font-size: 1.3em;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.05));
 }
 
 .excel-info-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  color: #a16207;
+  color: #64748b;
 }
 
 .excel-info-list li {
@@ -1193,30 +1199,31 @@ button:focus-visible,
   content: '▸';
   position: absolute;
   left: 0;
-  color: #f59e0b;
+  color: #94a3b8;
   font-weight: bold;
   font-size: 1.1em;
 }
 
 .excel-info-list li strong {
-  color: #78350f;
+  color: #334155;
   font-weight: 600;
 }
 
 .excel-format-highlight {
-  background: rgba(251, 191, 36, 0.2);
+  background: rgba(148, 163, 184, 0.15);
   padding: 2px 6px;
   border-radius: 6px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 0.9em;
-  border: 1px solid rgba(251, 191, 36, 0.3);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #475569;
 }
 
 /* Excel info box hover effect */
 .excel-info-box:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.2);
-  border-color: #d97706;
+  box-shadow: 0 4px 12px rgba(148, 163, 184, 0.12);
+  border-color: #cbd5e1;
   transition: all 0.3s ease;
 }
 
@@ -1242,5 +1249,251 @@ button:focus-visible,
   .excel-format-highlight {
     font-size: 0.85em;
     padding: 1px 4px;
+  }
+}
+
+/* Smart table example tip box styling */
+.smart-table-tip {
+  background: linear-gradient(135deg, #fafffe 0%, #f7fef7 50%, #f0fdf4 100%);
+  border: 1.5px solid #d1fae5;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(34, 197, 94, 0.06);
+}
+
+.smart-table-tip::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #a7f3d0 0%, #86efac 50%, #a7f3d0 100%);
+}
+
+.smart-table-tip p {
+  margin: 0;
+  color: #374151;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.smart-table-tip .tip-icon {
+  font-size: 1.2em;
+  margin-right: 8px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.05));
+}
+
+.smart-table-tip strong {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.smart-table-tip .tip-arrow {
+  font-weight: bold;
+  color: #6b7280;
+  margin: 0 6px;
+  font-size: 1.1em;
+}
+
+.smart-table-tip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.08);
+  border-color: #bbf7d0;
+  transition: all 0.2s ease;
+}
+
+/* Responsive design for smart table tip */
+@media (max-width: 768px) {
+  .smart-table-tip {
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+  }
+  
+  .smart-table-tip p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  
+  .smart-table-tip .tip-icon {
+    font-size: 1.1em;
+    margin-right: 6px;
+  }
+}
+
+/* Message form compact styles */
+.message-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.table-section {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+}
+
+.table-checkbox {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.table-checkbox input[type="checkbox"] {
+  margin-right: 8px;
+  transform: scale(1.1);
+}
+
+.table-label {
+  margin: 0;
+  color: #6f42c1;
+  font-weight: 600;
+}
+
+.table-info-compact {
+  background: #e3f2fd;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #bbdefb;
+}
+
+.table-info-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1565c0;
+  margin: 0 0 8px 0;
+}
+
+.table-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #1976d2;
+}
+
+.smart-table-tip-compact {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 0.8rem;
+  color: #0369a1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.table-config {
+  margin-top: 12px;
+}
+
+.table-config-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.table-rows-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.table-row-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.table-input {
+  margin-bottom: 0;
+}
+
+.stats-compact {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.stats-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #15803d;
+  margin: 0 0 8px 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #16a34a;
+  margin-bottom: 8px;
+}
+
+.stats-warning {
+  font-size: 0.8rem;
+  color: #ca8a04;
+  margin: 0;
+  background: #fefce8;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #fde047;
+}
+
+.message-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.btn-large {
+  flex: 2;
+}
+
+.btn-small {
+  flex: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .table-info-grid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  
+  .table-row-inputs {
+    grid-template-columns: 1fr;
+  }
+  
+  .message-actions {
+    flex-direction: column;
+  }
+  
+  .btn-large,
+  .btn-small {
+    flex: none;
   }
 }
