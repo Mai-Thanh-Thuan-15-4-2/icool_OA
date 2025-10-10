@@ -43,6 +43,14 @@ interface TableRow {
   value: string;
 }
 
+interface UserHistory {
+  id: string;
+  user_id: string;
+  display_name: string;
+  code: string;
+  timestamp: number;
+}
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState("userList");
   const [accessToken, setAccessToken] = useState("");
@@ -86,6 +94,10 @@ const App: React.FC = () => {
   const [detailButtonTitle, setDetailButtonTitle] = useState("Xem chi tiết");
   const [detailButtonUrl, setDetailButtonUrl] = useState("https://karaoke.com.vn/tin-tuc/");
   const [enableFooter, setEnableFooter] = useState(true);
+  
+  // User history states
+  const [userHistory, setUserHistory] = useState<UserHistory[]>([]);
+  const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
 
   // Load attachment history from localStorage on component mount
   useEffect(() => {
@@ -102,7 +114,123 @@ const App: React.FC = () => {
         console.error('Error loading attachment history:', error);
       }
     }
+    
+    // Load user history
+    const savedUserHistory = localStorage.getItem('userHistory');
+    if (savedUserHistory) {
+      try {
+        const history = JSON.parse(savedUserHistory);
+        setUserHistory(history);
+      } catch (error) {
+        console.error('Error loading user history:', error);
+      }
+    }
   }, []);
+
+  // Function to save user to history
+  const saveUserToHistory = (user: User) => {
+    const historyItem: UserHistory = {
+      id: `${user.user_id}_${Date.now()}`,
+      user_id: user.user_id,
+      display_name: user.display_name || 'Không có tên',
+      code: user.code || '',
+      timestamp: Date.now()
+    };
+    
+    setUserHistory(prevHistory => {
+      // Remove duplicate if exists
+      const filteredHistory = prevHistory.filter(item => item.user_id !== user.user_id);
+      // Add new item to the beginning
+      const newHistory = [historyItem, ...filteredHistory];
+      // Keep only latest 50 items
+      const limitedHistory = newHistory.slice(0, 50);
+      
+      // Save to localStorage
+      localStorage.setItem('userHistory', JSON.stringify(limitedHistory));
+      
+      return limitedHistory;
+    });
+  };
+
+  // Function to delete selected history items
+  const deleteSelectedHistory = () => {
+    if (selectedHistoryIds.length === 0) {
+      alert('Vui lòng chọn ít nhất một mục để xóa!');
+      return;
+    }
+    
+    if (confirm(`Bạn có chắc muốn xóa ${selectedHistoryIds.length} mục đã chọn?`)) {
+      setUserHistory(prevHistory => {
+        const newHistory = prevHistory.filter(item => !selectedHistoryIds.includes(item.id));
+        localStorage.setItem('userHistory', JSON.stringify(newHistory));
+        return newHistory;
+      });
+      
+      // Also remove corresponding message history for selected users
+      const selectedUserIds = userHistory
+        .filter(item => selectedHistoryIds.includes(item.id))
+        .map(item => item.user_id);
+      
+      setMessageHistory(prevMessageHistory => 
+        prevMessageHistory.filter(msg => !selectedUserIds.includes(msg.user_id))
+      );
+      
+      setSelectedHistoryIds([]);
+    }
+  };
+
+  // Function to delete single history item
+  const deleteSingleHistory = (id: string) => {
+    if (confirm('Bạn có chắc muốn xóa mục này?')) {
+      // Find the user_id for this history item
+      const historyItem = userHistory.find(item => item.id === id);
+      const userId = historyItem?.user_id;
+      
+      setUserHistory(prevHistory => {
+        const newHistory = prevHistory.filter(item => item.id !== id);
+        localStorage.setItem('userHistory', JSON.stringify(newHistory));
+        return newHistory;
+      });
+      
+      // Also remove corresponding message history for this user
+      if (userId) {
+        setMessageHistory(prevMessageHistory => 
+          prevMessageHistory.filter(msg => msg.user_id !== userId)
+        );
+      }
+      
+      // Remove from selected if it was selected
+      setSelectedHistoryIds(prev => prev.filter(selectedId => selectedId !== id));
+    }
+  };
+
+  // Function to toggle history item selection
+  const toggleHistorySelection = (id: string) => {
+    setSelectedHistoryIds(prev => 
+      prev.includes(id) 
+        ? prev.filter(selectedId => selectedId !== id)
+        : [...prev, id]
+    );
+  };
+
+  // Function to select/deselect all history items
+  const toggleSelectAllHistory = () => {
+    if (selectedHistoryIds.length === userHistory.length) {
+      setSelectedHistoryIds([]);
+    } else {
+      setSelectedHistoryIds(userHistory.map(item => item.id));
+    }
+  };
+
+  // Function to clear all history
+  const clearAllHistory = () => {
+    if (confirm('Bạn có chắc muốn xóa toàn bộ lịch sử?')) {
+      setUserHistory([]);
+      setSelectedHistoryIds([]);
+      setMessageHistory([]); // Also clear message history (60 minutes rule)
+      localStorage.removeItem('userHistory');
+    }
+  };
 
   // Function to save attachment ID to localStorage history
   const saveAttachmentToHistory = (newAttachmentId: string) => {
@@ -899,6 +1027,24 @@ const App: React.FC = () => {
             ...prev,
             { user_id: userId, timestamp: Date.now() },
           ]);
+          
+          // Save user to history when message sent successfully
+          const currentUser = users.find(user => user.user_id === userId);
+          if (currentUser) {
+            // Get the code that was actually used in the message
+            const codeUsed = tableContentParsed.find(row => row.key.includes("ưu đãi") || row.key.includes("code"))?.value || "";
+            
+            // If user doesn't have code, use manual input code for history
+            const finalCode = currentUser.code && currentUser.code.trim() 
+              ? currentUser.code 
+              : (codeUsed || tableRows[1]?.value || "");
+            
+            const historyUser = {
+              ...currentUser,
+              code: finalCode
+            };
+            saveUserToHistory(historyUser);
+          }
         }
         setMessageResponse(
           (prev) =>
@@ -1144,7 +1290,7 @@ const App: React.FC = () => {
               { id: "userList", label: "Danh sách người dùng" },
               { id: "uploadImage", label: "Tải ảnh lên" },
               { id: "sendMessage", label: "Gửi tin nhắn" },
-              { id: "messageHistory", label: "Lịch sử gửi tin" },
+              { id: "customerHistory", label: "Lịch sử khách hàng" },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -1508,6 +1654,7 @@ const App: React.FC = () => {
                             onChange={(e) => setBookingButtonTitle(e.target.value)}
                             className="input-field compact"
                             placeholder="Đặt phòng ngay"
+                            style={{width: "90%"}}
                           />
                         </div>
                         <div className="button-input-group">
@@ -1517,6 +1664,7 @@ const App: React.FC = () => {
                             value={bookingButtonUrl}
                             onChange={(e) => setBookingButtonUrl(e.target.value)}
                             className="input-field compact"
+                             style={{width: "90%"}}
                             placeholder="https://..."
                           />
                         </div>
@@ -1546,6 +1694,7 @@ const App: React.FC = () => {
                           <label className="button-input-label">Tên nút:</label>
                           <input
                             type="text"
+                             style={{width: "90%"}}
                             value={detailButtonTitle}
                             onChange={(e) => setDetailButtonTitle(e.target.value)}
                             className="input-field compact"
@@ -1556,6 +1705,7 @@ const App: React.FC = () => {
                           <label className="button-input-label">Link:</label>
                           <input
                             type="url"
+                             style={{width: "90%"}}
                             value={detailButtonUrl}
                             onChange={(e) => setDetailButtonUrl(e.target.value)}
                             className="input-field compact"
@@ -1589,6 +1739,7 @@ const App: React.FC = () => {
                       </label>
                       <input
                         type="text"
+                         style={{width: "90%"}}
                         value={footerContent}
                         onChange={(e) => setFooterContent(e.target.value)}
                         className="input-field compact"
@@ -1638,14 +1789,99 @@ const App: React.FC = () => {
               )}
             </div>
           )}
-          {/* Message History Tab */}
-          {activeTab === "messageHistory" && (
+          {/* Customer History Tab */}
+          {activeTab === "customerHistory" && (
             <div>
-              <h2 className="section-header">Lịch sử gửi tin</h2>
-              <div
-                className="response-container"
-                dangerouslySetInnerHTML={{ __html: renderMessageHistory() }}
-              />
+              <h2 className="section-header">Lịch sử khách hàng</h2>
+              
+              {userHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-600 text-lg mb-4">Chưa có lịch sử khách hàng nào</p>
+                  <p className="text-gray-500 text-sm">Lịch sử sẽ được lưu tự động khi gửi tin nhắn thành công</p>
+                </div>
+              ) : (
+                <div>
+                  {/* Compact action buttons */}
+                  <div className="history-actions">
+                    <button
+                      onClick={toggleSelectAllHistory}
+                      className="btn-compact btn-secondary-compact"
+                    >
+                      {selectedHistoryIds.length === userHistory.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                    </button>
+                    <button
+                      onClick={deleteSelectedHistory}
+                      className="btn-compact btn-danger-compact"
+                      disabled={selectedHistoryIds.length === 0}
+                    >
+                      Xóa đã chọn ({selectedHistoryIds.length})
+                    </button>
+                    <button
+                      onClick={clearAllHistory}
+                      className="btn-compact btn-danger-compact"
+                    >
+                      Xóa tất cả
+                    </button>
+                    <div className="text-sm text-gray-600">
+                      Tổng: {userHistory.length} khách hàng
+                    </div>
+                  </div>
+
+                  {/* User history table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full bg-white rounded-xl shadow-lg">
+                      <thead>
+                        <tr className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                          <th className="py-4 px-6 text-left font-semibold">
+                            <input
+                              type="checkbox"
+                              checked={selectedHistoryIds.length === userHistory.length && userHistory.length > 0}
+                              onChange={toggleSelectAllHistory}
+                              className="mr-2"
+                            />
+                            Chọn
+                          </th>
+                          <th className="py-4 px-6 text-left font-semibold">STT</th>
+                          <th className="py-4 px-6 text-left font-semibold">User ID</th>
+                          <th className="py-4 px-6 text-left font-semibold">Tên hiển thị</th>
+                          <th className="py-4 px-6 text-left font-semibold">Code</th>
+                          <th className="py-4 px-6 text-left font-semibold">Thời gian</th>
+                          <th className="py-4 px-6 text-left font-semibold">Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {userHistory.map((item, index) => (
+                          <tr key={item.id} className="hover:bg-green-50 transition-colors duration-200 border-b border-gray-100">
+                            <td className="py-3 px-6">
+                              <input
+                                type="checkbox"
+                                checked={selectedHistoryIds.includes(item.id)}
+                                onChange={() => toggleHistorySelection(item.id)}
+                              />
+                            </td>
+                            <td className="py-3 px-6 text-gray-700">{index + 1}</td>
+                            <td className="py-3 px-6 text-gray-700 font-mono text-sm">{item.user_id}</td>
+                            <td className="py-3 px-6 text-gray-700">{item.display_name}</td>
+                            <td className="py-3 px-6 text-gray-700">{item.code || <span className="text-gray-400 italic">Không có</span>}</td>
+                            <td className="py-3 px-6 text-gray-700 text-sm">
+                              {new Date(item.timestamp).toLocaleString('vi-VN')}
+                            </td>
+                            <td className="py-3 px-6">
+                              <button
+                                onClick={() => deleteSingleHistory(item.id)}
+                                className="delete-btn"
+                                title="Xóa khách hàng này khỏi lịch sử"
+                              >
+                                Xóa
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

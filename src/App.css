@@ -484,6 +484,58 @@ input[type="checkbox"] {
     0 2px 6px rgba(220, 38, 38, 0.2);
 }
 
+.btn-danger:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Compact action buttons for history tab */
+.history-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.btn-compact {
+  padding: 6px 12px;
+  font-size: 0.875rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-danger-compact {
+  background: #dc2626;
+  color: white;
+}
+
+.btn-danger-compact:hover:not(:disabled) {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.btn-danger-compact:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary-compact {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-secondary-compact:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
 /* Section header */
 .section-header {
   font-size: 1.75rem;
