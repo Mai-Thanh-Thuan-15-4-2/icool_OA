@@ -77,6 +77,15 @@ const App: React.FC = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [attachmentHistory, setAttachmentHistory] = useState<string[]>([]);
+  
+  // Button configuration states
+  const [enableBookingButton, setEnableBookingButton] = useState(true);
+  const [bookingButtonTitle, setBookingButtonTitle] = useState("Đặt phòng ngay");
+  const [bookingButtonUrl, setBookingButtonUrl] = useState("https://zalo.me/s/4496742181481836529/?utm_source=zalo-qr");
+  const [enableDetailButton, setEnableDetailButton] = useState(false);
+  const [detailButtonTitle, setDetailButtonTitle] = useState("Xem chi tiết");
+  const [detailButtonUrl, setDetailButtonUrl] = useState("https://karaoke.com.vn/tin-tuc/");
+  const [enableFooter, setEnableFooter] = useState(true);
 
   // Load attachment history from localStorage on component mount
   useEffect(() => {
@@ -836,17 +845,27 @@ const App: React.FC = () => {
               ...(enableTable
                 ? [{ type: "table", content: tableContentParsed }]
                 : []),
-              { type: "text", align: "center", content: footerContent },
+              ...(enableFooter
+                ? [{ type: "text", align: "center", content: footerContent }]
+                : []),
             ],
             buttons: [
-              {
+              ...(enableBookingButton ? [{
                 type: "oa.open.url",
-                title: "Đặt phòng ngay",
+                title: bookingButtonTitle,
                 payload: {
-                  url: "https://zalo.me/s/4496742181481836529/?utm_source=zalo-qr",
+                  url: bookingButtonUrl,
                 },
                 image_icon: "",
-              },
+              }] : []),
+              ...(enableDetailButton && detailButtonUrl ? [{
+                type: "oa.open.url", 
+                title: detailButtonTitle,
+                payload: {
+                  url: detailButtonUrl,
+                },
+                image_icon: "https://truongvan.vn/wp-content/uploads/info.png",
+              }] : []),
             ],
           },
         },
@@ -1398,16 +1417,18 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="form-group table-section">
-                  <div className="table-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={enableTable}
-                      onChange={(e) => setEnableTable(e.target.checked)}
-                      className="mr-2"
-                    />
-                    <label className="form-label table-label">
-                      Bật nội dung bảng
+                  <div className="button-toggle">
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={enableTable}
+                        onChange={(e) => setEnableTable(e.target.checked)}
+                      />
+                      <span className="toggle-slider"></span>
                     </label>
+                    <span className="toggle-label">
+                      📋 Bật nội dung bảng {enableTable ? '(Bật)' : '(Tắt)'}
+                    </span>
                   </div>
                   
                   <div className="table-info-compact">
@@ -1458,16 +1479,122 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="block form-label">
-                    Nội dung chân trang
-                  </label>
-                  <input
-                    type="text"
-                    value={footerContent}
-                    onChange={(e) => setFooterContent(e.target.value)}
-                    className="input-field compact"
-                  />
+                <div className="form-group buttons-section">
+                  <h3 className="buttons-section-title">🔗 Cấu hình nút hành động</h3>
+                  
+                  {/* Booking Button Section */}
+                  <div className="button-config-item">
+                    <div className="button-toggle">
+                      <label className="toggle-switch">
+                        <input
+                          type="checkbox"
+                          checked={enableBookingButton}
+                          onChange={(e) => setEnableBookingButton(e.target.checked)}
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                      <span className="toggle-label">
+                        📅 Nút đặt phòng {enableBookingButton ? '(Bật)' : '(Tắt)'}
+                      </span>
+                    </div>
+                    
+                    {enableBookingButton && (
+                      <div className="button-inputs">
+                        <div className="button-input-group">
+                          <label className="button-input-label">Tên nút:</label>
+                          <input
+                            type="text"
+                            value={bookingButtonTitle}
+                            onChange={(e) => setBookingButtonTitle(e.target.value)}
+                            className="input-field compact"
+                            placeholder="Đặt phòng ngay"
+                          />
+                        </div>
+                        <div className="button-input-group">
+                          <label className="button-input-label">Link:</label>
+                          <input
+                            type="url"
+                            value={bookingButtonUrl}
+                            onChange={(e) => setBookingButtonUrl(e.target.value)}
+                            className="input-field compact"
+                            placeholder="https://..."
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Detail Button Section */}
+                  <div className="button-config-item">
+                    <div className="button-toggle">
+                      <label className="toggle-switch">
+                        <input
+                          type="checkbox"
+                          checked={enableDetailButton}
+                          onChange={(e) => setEnableDetailButton(e.target.checked)}
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                      <span className="toggle-label">
+                        � Nút xem chi tiết {enableDetailButton ? '(Bật)' : '(Tắt)'}
+                      </span>
+                    </div>
+                    
+                    {enableDetailButton && (
+                      <div className="button-inputs">
+                        <div className="button-input-group">
+                          <label className="button-input-label">Tên nút:</label>
+                          <input
+                            type="text"
+                            value={detailButtonTitle}
+                            onChange={(e) => setDetailButtonTitle(e.target.value)}
+                            className="input-field compact"
+                            placeholder="Xem chi tiết"
+                          />
+                        </div>
+                        <div className="button-input-group">
+                          <label className="button-input-label">Link:</label>
+                          <input
+                            type="url"
+                            value={detailButtonUrl}
+                            onChange={(e) => setDetailButtonUrl(e.target.value)}
+                            className="input-field compact"
+                            placeholder="https://..."
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-group footer-section">
+                  <div className="button-toggle">
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={enableFooter}
+                        onChange={(e) => setEnableFooter(e.target.checked)}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span className="toggle-label">
+                      📝 Nội dung chân trang {enableFooter ? '(Bật)' : '(Tắt)'}
+                    </span>
+                  </div>
+                  
+                  {enableFooter && (
+                    <div className="footer-input">
+                      <label className="block form-label">
+                        Nội dung chân trang
+                      </label>
+                      <input
+                        type="text"
+                        value={footerContent}
+                        onChange={(e) => setFooterContent(e.target.value)}
+                        className="input-field compact"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 

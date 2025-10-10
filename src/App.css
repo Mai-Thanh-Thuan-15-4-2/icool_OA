@@ -1345,23 +1345,6 @@ button:focus-visible,
   border: 1px solid #e9ecef;
 }
 
-.table-checkbox {
-  display: flex;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.table-checkbox input[type="checkbox"] {
-  margin-right: 8px;
-  transform: scale(1.1);
-}
-
-.table-label {
-  margin: 0;
-  color: #6f42c1;
-  font-weight: 600;
-}
-
 .table-info-compact {
   background: #e3f2fd;
   border-radius: 8px;
@@ -1583,6 +1566,155 @@ button:focus-visible,
   
   .attachment-history-btn {
     margin-top: 4px;
+  }
+}
+
+/* Buttons Configuration Styles */
+.buttons-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.buttons-section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.button-config-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.button-config-item:last-child {
+  margin-bottom: 0;
+}
+
+.button-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #cbd5e1;
+  border-radius: 24px;
+  transition: all 0.3s ease;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: #3b82f6;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+.toggle-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.button-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-left: 60px;
+  background: #f9fafb;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.button-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.button-input-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+/* Footer Section Styles */
+.footer-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.footer-input {
+  margin-left: 60px;
+  margin-top: 12px;
+  background: #f9fafb;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Responsive design for buttons configuration */
+@media (max-width: 768px) {
+  .button-inputs {
+    margin-left: 0;
+    margin-top: 8px;
+  }
+  
+  .button-toggle {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .footer-input {
+    margin-left: 0;
+    margin-top: 8px;
   }
 }
 
