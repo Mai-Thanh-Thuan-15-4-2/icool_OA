@@ -63,6 +63,7 @@ const App: React.FC = () => {
   const [headerContent, setHeaderContent] = useState(
     "🎤 Khai trương ICOOL Sư Vạn Hạnh"
   );
+  const [headerAlign, setHeaderAlign] = useState<"left" | "center" | "right">("left");
   const [messageContent, setMessageContent] = useState(
     "Tưng bừng khai trương – ICOOL Sư Vạn Hạnh chính thức chào đón Quý Khách đến khám phá không gian âm nhạc đỉnh cao, công nghệ Karaoke mới nhất lần đầu tiên có mặt tại Việt Nam cùng với ưu đãi: GIẢM 50% GIỜ HÁT"
   );
@@ -1000,7 +1001,7 @@ const App: React.FC = () => {
             template_type: "promotion",
             elements: [
               { type: "banner", attachment_id: attachmentId },
-              { type: "header", align: "left", content: headerContent },
+              { type: "header", align: headerAlign, content: headerContent },
               { type: "text", align: messageAlign, content: messageContent },
               ...(enableTable
                 ? [{ type: "table", content: tableContentParsed }]
@@ -1571,9 +1572,21 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="block form-label">
-                    Nội dung tiêu đề
-                  </label>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'}}>
+                    <label className="block form-label" style={{marginBottom: 0}}>
+                      Nội dung tiêu đề
+                    </label>
+                    <select
+                      value={headerAlign}
+                      onChange={(e) => setHeaderAlign(e.target.value as "left" | "center" | "right")}
+                      className="input-field compact"
+                      style={{width: 'auto', padding: '4px 8px', fontSize: '13px'}}
+                    >
+                      <option value="left">⬅️ Căn trái</option>
+                      <option value="center">↔️ Căn giữa</option>
+                      <option value="right">➡️ Căn phải</option>
+                    </select>
+                  </div>
                   <input
                     type="text"
                     value={headerContent}
