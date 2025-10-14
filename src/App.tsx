@@ -66,6 +66,7 @@ const App: React.FC = () => {
   const [messageContent, setMessageContent] = useState(
     "Tưng bừng khai trương – ICOOL Sư Vạn Hạnh chính thức chào đón Quý Khách đến khám phá không gian âm nhạc đỉnh cao, công nghệ Karaoke mới nhất lần đầu tiên có mặt tại Việt Nam cùng với ưu đãi: GIẢM 50% GIỜ HÁT"
   );
+  const [messageAlign, setMessageAlign] = useState<"left" | "center" | "right" | "justify">("left");
   const [tableRows, setTableRows] = useState<TableRow[]>([
     { key: "Tên khách hàng", value: "Duyên" },
     { key: "Mã ưu đãi", value: "ACBDBMN" },
@@ -1000,7 +1001,7 @@ const App: React.FC = () => {
             elements: [
               { type: "banner", attachment_id: attachmentId },
               { type: "header", align: "left", content: headerContent },
-              { type: "text", align: "left", content: messageContent },
+              { type: "text", align: messageAlign, content: messageContent },
               ...(enableTable
                 ? [{ type: "table", content: tableContentParsed }]
                 : []),
@@ -1582,9 +1583,22 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="block form-label">
-                    Nội dung tin nhắn
-                  </label>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'}}>
+                    <label className="block form-label" style={{marginBottom: 0}}>
+                      Nội dung tin nhắn
+                    </label>
+                    <select
+                      value={messageAlign}
+                      onChange={(e) => setMessageAlign(e.target.value as "left" | "center" | "right" | "justify")}
+                      className="input-field compact"
+                      style={{width: 'auto', padding: '4px 8px', fontSize: '13px'}}
+                    >
+                      <option value="left">⬅️ Căn trái</option>
+                      <option value="center">↔️ Căn giữa</option>
+                      <option value="right">➡️ Căn phải</option>
+                      <option value="justify">⬌ Căn đều</option>
+                    </select>
+                  </div>
                   <textarea
                     value={messageContent}
                     onChange={(e) => setMessageContent(e.target.value)}
