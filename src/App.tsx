@@ -66,7 +66,7 @@ const App: React.FC = () => {
   const [messageContent, setMessageContent] = useState(
     "Tưng bừng khai trương – ICOOL Sư Vạn Hạnh chính thức chào đón Quý Khách đến khám phá không gian âm nhạc đỉnh cao, công nghệ Karaoke mới nhất lần đầu tiên có mặt tại Việt Nam cùng với ưu đãi: GIẢM 50% GIỜ HÁT"
   );
-  const [messageAlign, setMessageAlign] = useState<"left" | "center" | "right" | "justify">("left");
+  const [messageAlign, setMessageAlign] = useState<"left" | "center" | "right">("left");
   const [tableRows, setTableRows] = useState<TableRow[]>([
     { key: "Tên khách hàng", value: "Duyên" },
     { key: "Mã ưu đãi", value: "ACBDBMN" },
@@ -1589,14 +1589,14 @@ const App: React.FC = () => {
                     </label>
                     <select
                       value={messageAlign}
-                      onChange={(e) => setMessageAlign(e.target.value as "left" | "center" | "right" | "justify")}
+                      onChange={(e) => setMessageAlign(e.target.value as "left" | "center" | "right")}
                       className="input-field compact"
                       style={{width: 'auto', padding: '4px 8px', fontSize: '13px'}}
+                      title="Zalo OA không hỗ trợ căn đều (justify)"
                     >
-                      <option value="left">⬅️ Căn trái</option>
+                      <option value="left">⬅️ Căn trái (Khuyến nghị)</option>
                       <option value="center">↔️ Căn giữa</option>
                       <option value="right">➡️ Căn phải</option>
-                      <option value="justify">⬌ Căn đều</option>
                     </select>
                   </div>
                   <textarea
