@@ -65,7 +65,7 @@ const App: React.FC = () => {
   );
   const [headerAlign, setHeaderAlign] = useState<"left" | "center" | "right">("left");
   const [messageContent, setMessageContent] = useState(
-    "Tưng bừng khai trương – ICOOL Sư Vạn Hạnh chính thức chào đón Quý Khách đến khám phá không gian âm nhạc đỉnh cao, công nghệ Karaoke mới nhất lần đầu tiên có mặt tại Việt Nam cùng với ưu đãi: GIẢM 50% GIỜ HÁT"
+    "Mến chào Quý Khách,<br>&nbsp;&nbsp;ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT.<br><br>* Điều kiện áp dụng:<br>&nbsp;&nbsp;- Áp dụng tất cả khung giờ từ chủ nhật đến thứ 5 hàng tuần (thứ 6, thứ 7 và ngày lễ theo quy định của ICOOL áp dụng khi mở bill trước 20h) trên toàn Hệ thống Karaoke ICOOL.<br>&nbsp;&nbsp;- Không áp dụng đồng thời các ưu đãi khác.<br>&nbsp;&nbsp;- Thời hạn áp dụng: từ ngày nhận voucher đến 25/10/2025."
   );
   const [messageAlign, setMessageAlign] = useState<"left" | "center" | "right">("left");
   const [tableRows, setTableRows] = useState<TableRow[]>([
@@ -1613,11 +1613,89 @@ const App: React.FC = () => {
                     </select>
                   </div>
                   <textarea
+                    id="messageContentTextarea"
                     value={messageContent}
                     onChange={(e) => setMessageContent(e.target.value)}
                     rows={3}
                     className="input-field compact resize-vertical"
                   />
+                  <div style={{marginTop: '6px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center'}}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = document.getElementById('messageContentTextarea') as HTMLTextAreaElement;
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const end = textarea.selectionEnd;
+                          const text = messageContent;
+                          const newText = text.substring(0, start) + '<br>' + text.substring(end);
+                          setMessageContent(newText);
+                          setTimeout(() => {
+                            textarea.focus();
+                            textarea.setSelectionRange(start + 4, start + 4);
+                          }, 0);
+                        }
+                      }}
+                      className="compact-button"
+                      style={{fontSize: '12px', padding: '4px 10px'}}
+                      title="Chèn thẻ <br> để xuống dòng"
+                    >
+                      ↵ Xuống dòng
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = document.getElementById('messageContentTextarea') as HTMLTextAreaElement;
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const end = textarea.selectionEnd;
+                          const text = messageContent;
+                          const newText = text.substring(0, start) + '&nbsp;&nbsp;' + text.substring(end);
+                          setMessageContent(newText);
+                          setTimeout(() => {
+                            textarea.focus();
+                            textarea.setSelectionRange(start + 12, start + 12);
+                          }, 0);
+                        }
+                      }}
+                      className="compact-button"
+                      style={{fontSize: '12px', padding: '4px 10px'}}
+                      title="Thụt đầu dòng 2 spaces (dùng cho sub-item)"
+                    >
+                      ⇥ Thụt 2
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const textarea = document.getElementById('messageContentTextarea') as HTMLTextAreaElement;
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const end = textarea.selectionEnd;
+                          const text = messageContent;
+                          const newText = text.substring(0, start) + '&nbsp;&nbsp;&nbsp;&nbsp;' + text.substring(end);
+                          setMessageContent(newText);
+                          setTimeout(() => {
+                            textarea.focus();
+                            textarea.setSelectionRange(start + 24, start + 24);
+                          }, 0);
+                        }
+                      }}
+                      className="compact-button"
+                      style={{fontSize: '12px', padding: '4px 10px'}}
+                      title="Thụt đầu dòng 4 spaces (dùng cho nested item)"
+                    >
+                      ⇥ Thụt 4
+                    </button>
+                    
+                    <div style={{height: '20px', width: '1px', background: '#d1d5db'}}></div>
+                    
+                    <span style={{fontSize: '11px', color: '#6b7280'}}>
+                      💡 <code style={{background: '#f3f4f6', padding: '2px 4px', borderRadius: '3px', fontSize: '10px'}}>&lt;br&gt;</code> xuống dòng | 
+                      <code style={{background: '#f3f4f6', padding: '2px 4px', borderRadius: '3px', fontSize: '10px', marginLeft: '4px'}}>&amp;nbsp;</code> thụt đầu dòng
+                    </span>
+                  </div>
                 </div>
 
                 <div className="form-group table-section">
