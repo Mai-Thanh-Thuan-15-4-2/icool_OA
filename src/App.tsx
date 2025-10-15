@@ -122,6 +122,7 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
   // Auto format state
   const [isMessageFormatted, setIsMessageFormatted] = useState(false);
   const [originalMessageContent, setOriginalMessageContent] = useState(defaultMessageContent);
+  const [isFormatting, setIsFormatting] = useState(false);
 
   // Load attachment history from localStorage on component mount
   useEffect(() => {
@@ -1725,22 +1726,22 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                       </label>
                       <button
                         type="button"
-                        onClick={() => {
+                        disabled={isFormatting}
+                        onClick={async () => {
                           if (isMessageFormatted) {
-                            // Restore original content
+                            // Restore original content instantly
                             setMessageContent(originalMessageContent);
                             setIsMessageFormatted(false);
                           } else {
-                            // Save original and format
+                            // Start formatting with loading and typing effect
+                            setIsFormatting(true);
                             setOriginalMessageContent(messageContent);
                             
                             let formatted = messageContent;
                           
-                            // Step 1: Convert leading spaces to &nbsp; (before converting \n to <br>)
-                            // Split by line, convert spaces, then join back
+                            // Step 1: Convert leading spaces to &nbsp;
                             const lines = formatted.split('\n');
                             formatted = lines.map(line => {
-                              // Count leading spaces
                               const leadingSpaces = line.match(/^( +)/);
                               if (leadingSpaces) {
                                 const spaceCount = leadingSpaces[0].length;
@@ -1756,54 +1757,86 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                             // Step 3: Convert single line breaks to <br>
                             formatted = formatted.replace(/\n/g, '<br>');
                             
-                            // Step 4: Handle special case for "- " after <br> (if not already indented)
+                            // Step 4: Handle special case for "- " after <br>
                             formatted = formatted.replace(/<br>- /g, '<br>&nbsp;&nbsp;- ');
                             
-                            // Step 5: Handle special case for "- " at start (if not already indented)
+                            // Step 5: Handle special case for "- " at start
                             if (formatted.startsWith('- ')) {
                               formatted = '&nbsp;&nbsp;' + formatted;
                             }
                             
-                            setMessageContent(formatted);
+                            // Typing effect - type character by character
+                            setMessageContent('');
+                            const typingSpeed = 15; // milliseconds per character
+                            
+                            for (let i = 0; i <= formatted.length; i++) {
+                              await new Promise(resolve => setTimeout(resolve, typingSpeed));
+                              setMessageContent(formatted.substring(0, i));
+                            }
+                            
+                            setIsFormatting(false);
                             setIsMessageFormatted(true);
                           }
                         }}
-                        className={`compact-button ${isMessageFormatted ? 'auto-format-btn-active' : 'auto-format-btn'}`}
+                        className={`compact-button ${isFormatting ? '' : isMessageFormatted ? 'auto-format-btn-active' : 'auto-format-btn'}`}
                         style={{
                           fontSize: '11px', 
                           padding: '6px 12px', 
-                          background: isMessageFormatted 
-                            ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
-                            : 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)', 
+                          background: isFormatting
+                            ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
+                            : isMessageFormatted 
+                              ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
+                              : 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)', 
                           color: 'white', 
                           border: 'none',
                           borderRadius: '10px',
-                          boxShadow: isMessageFormatted 
-                            ? '0 4px 15px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.2)'
-                            : '0 4px 15px rgba(245, 158, 11, 0.3), 0 0 20px rgba(245, 158, 11, 0.2)',
+                          boxShadow: isFormatting
+                            ? '0 4px 15px rgba(99, 102, 241, 0.4), 0 0 20px rgba(99, 102, 241, 0.3)'
+                            : isMessageFormatted 
+                              ? '0 4px 15px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.2)'
+                              : '0 4px 15px rgba(245, 158, 11, 0.3), 0 0 20px rgba(245, 158, 11, 0.2)',
                           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          cursor: 'pointer',
+                          cursor: isFormatting ? 'wait' : 'pointer',
+                          opacity: isFormatting ? 0.9 : 1,
                           fontWeight: '600',
                           letterSpacing: '0.3px',
                           textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
-                          e.currentTarget.style.boxShadow = isMessageFormatted
-                            ? '0 8px 25px rgba(16, 185, 129, 0.4), 0 0 30px rgba(16, 185, 129, 0.3)'
-                            : '0 8px 25px rgba(245, 158, 11, 0.4), 0 0 30px rgba(245, 158, 11, 0.3)';
+                          if (!isFormatting) {
+                            e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                            e.currentTarget.style.boxShadow = isMessageFormatted
+                              ? '0 8px 25px rgba(16, 185, 129, 0.4), 0 0 30px rgba(16, 185, 129, 0.3)'
+                              : '0 8px 25px rgba(245, 158, 11, 0.4), 0 0 30px rgba(245, 158, 11, 0.3)';
+                          }
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                          e.currentTarget.style.boxShadow = isMessageFormatted
-                            ? '0 4px 15px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.2)'
-                            : '0 4px 15px rgba(245, 158, 11, 0.3), 0 0 20px rgba(245, 158, 11, 0.2)';
+                          if (!isFormatting) {
+                            e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                            e.currentTarget.style.boxShadow = isMessageFormatted
+                              ? '0 4px 15px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.2)'
+                              : '0 4px 15px rgba(245, 158, 11, 0.3), 0 0 20px rgba(245, 158, 11, 0.2)';
+                          }
                         }}
-                        title={isMessageFormatted 
-                          ? "Nhấn để quay về văn bản gốc" 
-                          : "Tự động chuyển đổi văn bản thường thành format với <br> và &nbsp; (có thể sai 😅)"}
+                        title={isFormatting 
+                          ? "Đang định dạng..." 
+                          : isMessageFormatted 
+                            ? "Nhấn để quay về văn bản gốc" 
+                            : "Tự động chuyển đổi văn bản thường thành format với <br> và &nbsp; (có thể sai 😅)"}
                       >
-                        {isMessageFormatted ? '↻ Hoàn tác' : '✨ Tự động định dạng pro ⇾ có thể sai :)))'}
+                        {isFormatting ? (
+                          <span style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                            <span className="spinner" style={{
+                              width: '12px',
+                              height: '12px',
+                              border: '2px solid rgba(255, 255, 255, 0.3)',
+                              borderTop: '2px solid white',
+                              borderRadius: '50%',
+                              animation: 'spin 0.6s linear infinite',
+                            }}></span>
+                            Đang định dạng...
+                          </span>
+                        ) : isMessageFormatted ? '↻ Hoàn tác' : '✨ Tự động định dạng pro ⇾ có thể sai :)))'}
                       </button>
                     </div>
                     <select

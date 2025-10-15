@@ -1990,6 +1990,19 @@ button:focus-visible,
   }
 }
 
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  display: inline-block;
+}
+
 .auto-format-btn {
   position: relative;
   overflow: hidden;
