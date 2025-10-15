@@ -64,9 +64,16 @@ const App: React.FC = () => {
     "🎤 Khai trương ICOOL Sư Vạn Hạnh"
   );
   const [headerAlign, setHeaderAlign] = useState<"left" | "center" | "right">("left");
-  const [messageContent, setMessageContent] = useState(
-    "Mến chào Quý Khách,<br>&nbsp;&nbsp;ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT.<br><br>* Điều kiện áp dụng:<br>&nbsp;&nbsp;- Áp dụng tất cả khung giờ từ chủ nhật đến thứ 5 hàng tuần (thứ 6, thứ 7 và ngày lễ theo quy định của ICOOL áp dụng khi mở bill trước 20h) trên toàn Hệ thống Karaoke ICOOL.<br>&nbsp;&nbsp;- Không áp dụng đồng thời các ưu đãi khác.<br>&nbsp;&nbsp;- Thời hạn áp dụng: từ ngày nhận voucher đến 25/10/2025."
-  );
+  
+  // Default message content (plain text format - chưa format)
+  const defaultMessageContent = `Mến chào Quý Khách,
+ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
+* Điều kiện áp dụng:
+  - Áp dụng tất cả khung giờ từ chủ nhật đến thứ 5 hàng tuần (thứ 6, thứ 7 và ngày lễ theo quy định của ICOOL áp dụng khi mở bill trước 20h) trên toàn Hệ thống Karaoke ICOOL.
+  - Không áp dụng đồng thời các ưu đãi khác.
+  - Thời hạn áp dụng: từ ngày nhận voucher đến 25/10/2025.`;
+  
+  const [messageContent, setMessageContent] = useState(defaultMessageContent);
   const [messageAlign, setMessageAlign] = useState<"left" | "center" | "right">("left");
   const [tableRows, setTableRows] = useState<TableRow[]>([
     { key: "Tên khách hàng", value: "Duyên" },
@@ -111,6 +118,10 @@ const App: React.FC = () => {
   const [showTableInfoTip, setShowTableInfoTip] = useState(false);
   const [showTableSourceTip, setShowTableSourceTip] = useState(false);
   const [showTableRowsTip, setShowTableRowsTip] = useState(false);
+
+  // Auto format state
+  const [isMessageFormatted, setIsMessageFormatted] = useState(false);
+  const [originalMessageContent, setOriginalMessageContent] = useState(defaultMessageContent);
 
   // Load attachment history from localStorage on component mount
   useEffect(() => {
@@ -1707,10 +1718,94 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'}}>
-                    <label className="block form-label" style={{marginBottom: 0}}>
-                      Nội dung tin nhắn
-                    </label>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', gap: '8px', flexWrap: 'wrap'}}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                      <label className="block form-label" style={{marginBottom: 0}}>
+                        Nội dung tin nhắn
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isMessageFormatted) {
+                            // Restore original content
+                            setMessageContent(originalMessageContent);
+                            setIsMessageFormatted(false);
+                          } else {
+                            // Save original and format
+                            setOriginalMessageContent(messageContent);
+                            
+                            let formatted = messageContent;
+                          
+                            // Step 1: Convert leading spaces to &nbsp; (before converting \n to <br>)
+                            // Split by line, convert spaces, then join back
+                            const lines = formatted.split('\n');
+                            formatted = lines.map(line => {
+                              // Count leading spaces
+                              const leadingSpaces = line.match(/^( +)/);
+                              if (leadingSpaces) {
+                                const spaceCount = leadingSpaces[0].length;
+                                const nbspString = '&nbsp;'.repeat(spaceCount);
+                                return nbspString + line.substring(spaceCount);
+                              }
+                              return line;
+                            }).join('\n');
+                            
+                            // Step 2: Convert double line breaks to <br><br>
+                            formatted = formatted.replace(/\n\n/g, '<br><br>');
+                            
+                            // Step 3: Convert single line breaks to <br>
+                            formatted = formatted.replace(/\n/g, '<br>');
+                            
+                            // Step 4: Handle special case for "- " after <br> (if not already indented)
+                            formatted = formatted.replace(/<br>- /g, '<br>&nbsp;&nbsp;- ');
+                            
+                            // Step 5: Handle special case for "- " at start (if not already indented)
+                            if (formatted.startsWith('- ')) {
+                              formatted = '&nbsp;&nbsp;' + formatted;
+                            }
+                            
+                            setMessageContent(formatted);
+                            setIsMessageFormatted(true);
+                          }
+                        }}
+                        className={`compact-button ${isMessageFormatted ? 'auto-format-btn-active' : 'auto-format-btn'}`}
+                        style={{
+                          fontSize: '11px', 
+                          padding: '6px 12px', 
+                          background: isMessageFormatted 
+                            ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
+                            : 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)', 
+                          color: 'white', 
+                          border: 'none',
+                          borderRadius: '10px',
+                          boxShadow: isMessageFormatted 
+                            ? '0 4px 15px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.2)'
+                            : '0 4px 15px rgba(245, 158, 11, 0.3), 0 0 20px rgba(245, 158, 11, 0.2)',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          letterSpacing: '0.3px',
+                          textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                          e.currentTarget.style.boxShadow = isMessageFormatted
+                            ? '0 8px 25px rgba(16, 185, 129, 0.4), 0 0 30px rgba(16, 185, 129, 0.3)'
+                            : '0 8px 25px rgba(245, 158, 11, 0.4), 0 0 30px rgba(245, 158, 11, 0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                          e.currentTarget.style.boxShadow = isMessageFormatted
+                            ? '0 4px 15px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.2)'
+                            : '0 4px 15px rgba(245, 158, 11, 0.3), 0 0 20px rgba(245, 158, 11, 0.2)';
+                        }}
+                        title={isMessageFormatted 
+                          ? "Nhấn để quay về văn bản gốc" 
+                          : "Tự động chuyển đổi văn bản thường thành format với <br> và &nbsp; (có thể sai 😅)"}
+                      >
+                        {isMessageFormatted ? '↻ Hoàn tác' : '✨ Tự động định dạng pro ⇾ có thể sai :)))'}
+                      </button>
+                    </div>
                     <select
                       value={messageAlign}
                       onChange={(e) => setMessageAlign(e.target.value as "left" | "center" | "right")}
@@ -1726,7 +1821,13 @@ const App: React.FC = () => {
                   <textarea
                     id="messageContentTextarea"
                     value={messageContent}
-                    onChange={(e) => setMessageContent(e.target.value)}
+                    onChange={(e) => {
+                      setMessageContent(e.target.value);
+                      // Reset format state if user manually edits after formatting
+                      if (isMessageFormatted) {
+                        setIsMessageFormatted(false);
+                      }
+                    }}
                     rows={3}
                     className="input-field compact resize-vertical"
                   />
@@ -1741,6 +1842,7 @@ const App: React.FC = () => {
                           const text = messageContent;
                           const newText = text.substring(0, start) + '<br>' + text.substring(end);
                           setMessageContent(newText);
+                          if (isMessageFormatted) setIsMessageFormatted(false);
                           setTimeout(() => {
                             textarea.focus();
                             textarea.setSelectionRange(start + 4, start + 4);
@@ -1764,6 +1866,7 @@ const App: React.FC = () => {
                           const text = messageContent;
                           const newText = text.substring(0, start) + '&nbsp;&nbsp;' + text.substring(end);
                           setMessageContent(newText);
+                          if (isMessageFormatted) setIsMessageFormatted(false);
                           setTimeout(() => {
                             textarea.focus();
                             textarea.setSelectionRange(start + 12, start + 12);
@@ -1787,6 +1890,7 @@ const App: React.FC = () => {
                           const text = messageContent;
                           const newText = text.substring(0, start) + '&nbsp;&nbsp;&nbsp;&nbsp;' + text.substring(end);
                           setMessageContent(newText);
+                          if (isMessageFormatted) setIsMessageFormatted(false);
                           setTimeout(() => {
                             textarea.focus();
                             textarea.setSelectionRange(start + 24, start + 24);
