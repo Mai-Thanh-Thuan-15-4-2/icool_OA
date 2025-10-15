@@ -1430,7 +1430,7 @@ const App: React.FC = () => {
               <h2 className="section-header">Lấy danh sách người dùng</h2>
 
               <div style={{marginBottom: '12px', padding: '12px', backgroundColor: '#e6f2ff', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #b3d9ff'}}>
-                <span style={{fontSize: '18px'}}>💡</span>
+                <span style={{fontSize: '18px', color: '#6b7280', padding: '2px 6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center'}}>⚡</span>
                 <span style={{fontSize: '13px', color: '#0068FF', fontWeight: '500'}}>
                   <strong>Ví dụ:</strong> Muốn tìm người thứ 51 đến 100 → nhập <strong>Offset: 51</strong>, <strong>Số lượng: 50</strong>
                 </span>
@@ -1603,7 +1603,32 @@ const App: React.FC = () => {
               {/* Attachment History Section */}
               {attachmentHistory.length > 0 && (
                 <div className="attachment-history-section">
-                  <h3 className="attachment-history-title">📋 Lịch sử ID ảnh (3 gần nhất)</h3>
+                  <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                    <h3 className="attachment-history-title" style={{margin: 0}}>📋 Lịch sử ID ảnh (3 gần nhất)</h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowAttachmentTip(!showAttachmentTip)}
+                      style={{
+                        background: 'none',
+                        border: '1.5px solid #d1d5db',
+                        borderRadius: '50%',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        padding: '2px 6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: '#6b7280',
+                      }}
+                      title="Xem gợi ý"
+                    >
+                      ❔
+                    </button>
+                  </div>
+                  {showAttachmentTip && (
+                    <div className="attachment-history-note" style={{marginTop: '8px', marginBottom: '8px'}}>
+                      Click "Sử dụng" để copy ID và áp dụng vào form gửi tin nhắn
+                    </div>
+                  )}
                   <div className="attachment-history-list">
                     {attachmentHistory.map((id, index) => (
                       <div key={id} className="attachment-history-item">
@@ -1626,29 +1651,6 @@ const App: React.FC = () => {
                         )}
                       </div>
                     ))}
-                  </div>
-                  <div style={{marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px'}}>
-                    <button
-                      type="button"
-                      onClick={() => setShowAttachmentTip(!showAttachmentTip)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '18px',
-                        padding: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
-                      title="Xem gợi ý"
-                    >
-                      💡
-                    </button>
-                    {showAttachmentTip && (
-                      <div className="attachment-history-note" style={{margin: 0}}>
-                        Click "Sử dụng" để copy ID và áp dụng vào form gửi tin nhắn
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
@@ -1800,29 +1802,11 @@ const App: React.FC = () => {
                     
                     <div style={{height: '20px', width: '1px', background: '#d1d5db'}}></div>
                     
-                    <button
-                      type="button"
-                      onClick={() => setShowMessageFormatTip(!showMessageFormatTip)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '18px',
-                        padding: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
-                      title="Xem gợi ý"
-                    >
-                      💡
-                    </button>
-                    
-                    {showMessageFormatTip && (
+
                       <span style={{fontSize: '11px', color: '#6b7280'}}>
                         <code style={{background: '#f3f4f6', padding: '2px 4px', borderRadius: '3px', fontSize: '10px'}}>&lt;br&gt;</code> xuống dòng | 
                         <code style={{background: '#f3f4f6', padding: '2px 4px', borderRadius: '3px', fontSize: '10px', marginLeft: '4px'}}>&amp;nbsp;</code> thụt đầu dòng
                       </span>
-                    )}
                   </div>
                 </div>
 
@@ -1839,46 +1823,44 @@ const App: React.FC = () => {
                     <span className="toggle-label">
                       📋 Bật nội dung bảng {enableTable ? '(Bật)' : '(Tắt)'}
                     </span>
-                  </div>
-                  
-                  <div style={{marginTop: '12px', display: 'flex', alignItems: 'flex-start', gap: '8px'}}>
-                    <button
+                        <button
                       type="button"
                       onClick={() => setShowTableInfoTip(!showTableInfoTip)}
                       style={{
                         background: 'none',
-                        border: 'none',
+                        border: '1.5px solid #d1d5db',
+                        borderRadius: '50%',
                         cursor: 'pointer',
-                        fontSize: '18px',
-                        padding: '4px',
+                        fontSize: '12px',
+                        padding: '2px 6px',
                         display: 'flex',
                         alignItems: 'center',
-                        flexShrink: 0,
+                        color: '#6b7280',
                       }}
                       title="Xem thông tin bảng tự động"
                     >
-                      💡
+                      ❔
                     </button>
-                    
-                    {showTableInfoTip && (
-                      <div style={{flex: 1}}>
-                        <div className="table-info-compact" style={{marginTop: 0}}>
-                          <h4 className="table-info-title">📋 Thông tin bảng tự động:</h4>
-                          <div className="table-info-grid">
-                            <div><strong>Nhãn:</strong> Từ ô bên dưới</div>
-                            <div><strong>Dòng 1:</strong> {useUserName ? 'Tên user, nếu không có -> lấy dự phòng bên dưới' : 'Chỉ dự phòng bên dưới'}</div>
-                            <div><strong>Dòng 2:</strong> {useUserCode ? 'Code user, nếu không có -> lấy dự phòng bên dưới' : 'Chỉ dự phòng bên dưới'}</div>
-                            <div><strong>Hiển thị:</strong> Dòng có dữ liệu</div>
-                          </div>
-                        </div>
-
-                        <div className="smart-table-tip-compact" style={{marginTop: '8px'}}>
-                          <span className="tip-icon">💡</span>
-                          <strong>Ví dụ:</strong> Không có code <span className="tip-arrow">→</span> dùng ô "Giá trị" thủ công
+                  </div>
+                  
+                  {showTableInfoTip && (
+                    <div style={{marginTop: '8px'}}>
+                      <div className="table-info-compact" style={{marginTop: 0}}>
+                        <h4 className="table-info-title">📋 Thông tin bảng tự động:</h4>
+                        <div className="table-info-grid">
+                          <div><strong>Nhãn:</strong> Từ ô bên dưới</div>
+                          <div><strong>Dòng 1:</strong> {useUserName ? 'Tên user, nếu không có -> lấy dự phòng bên dưới' : 'Chỉ dự phòng bên dưới'}</div>
+                          <div><strong>Dòng 2:</strong> {useUserCode ? 'Code user, nếu không có -> lấy dự phòng bên dưới' : 'Chỉ dự phòng bên dưới'}</div>
+                          <div><strong>Hiển thị:</strong> Dòng có dữ liệu</div>
                         </div>
                       </div>
-                    )}
-                  </div>
+
+                      <div className="smart-table-tip-compact" style={{marginTop: '8px'}}>
+                        <span className="tip-icon">⚡</span>
+                        <strong>Ví dụ:</strong> Không có code <span className="tip-arrow">→</span> dùng ô "Giá trị" thủ công
+                      </div>
+                    </div>
+                  )}
 
                   {enableTable && (
                     <div className="table-data-source">
@@ -1906,27 +1888,11 @@ const App: React.FC = () => {
                         </label>
                       </div>
                       <div style={{marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px'}}>
-                        <button
-                          type="button"
-                          onClick={() => setShowTableSourceTip(!showTableSourceTip)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontSize: '18px',
-                            padding: '4px',
-                            display: 'flex',
-                            alignItems: 'center',
-                          }}
-                          title="Xem gợi ý"
-                        >
-                          💡
-                        </button>
-                        {showTableSourceTip && (
+
                           <div className="checkbox-hint" style={{margin: 0}}>
                             Không check = dùng giá trị thủ công bên dưới
                           </div>
-                        )}
+
                       </div>
                     </div>
                   )}
@@ -1994,27 +1960,11 @@ const App: React.FC = () => {
                       ))}
                     </div>
                     <div style={{marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px'}}>
-                      <button
-                        type="button"
-                        onClick={() => setShowTableRowsTip(!showTableRowsTip)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: '18px',
-                          padding: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                        }}
-                        title="Xem gợi ý"
-                      >
-                        💡
-                      </button>
-                      {showTableRowsTip && (
+                      <span style={{fontSize: '12px', color: '#6b7280'}}>📊 Số dòng:</span>
+
                         <div style={{fontSize: '12px', color: '#6b7280'}}>
                           Dòng {tableRows.length}/2 | Tối thiểu 1 dòng, tối đa 2 dòng
                         </div>
-                      )}
                     </div>
                   </div>
                 </div>
