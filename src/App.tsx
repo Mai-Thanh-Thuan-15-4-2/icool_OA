@@ -105,6 +105,13 @@ const App: React.FC = () => {
   const [useUserName, setUseUserName] = useState(true);
   const [useUserCode, setUseUserCode] = useState(true);
 
+  // Tooltip visibility states
+  const [showAttachmentTip, setShowAttachmentTip] = useState(false);
+  const [showMessageFormatTip, setShowMessageFormatTip] = useState(false);
+  const [showTableInfoTip, setShowTableInfoTip] = useState(false);
+  const [showTableSourceTip, setShowTableSourceTip] = useState(false);
+  const [showTableRowsTip, setShowTableRowsTip] = useState(false);
+
   // Load attachment history from localStorage on component mount
   useEffect(() => {
     const savedHistory = localStorage.getItem('attachmentHistory');
@@ -1079,25 +1086,12 @@ const App: React.FC = () => {
             saveUserToHistory(historyUser);
           }
         }
-        setMessageResponse(
-          (prev) =>
-            prev +
-            `<pre class="bg-green-50 p-3 rounded-lg text-sm text-green-700 mb-2 overflow-x-auto">✅ Thành công - ${userId}: ${JSON.stringify(
-              result,
-              null,
-              2
-            )}</pre>`
-        );
         return true;
       } else {
         setMessageResponse(
           (prev) =>
             prev +
-            `<pre class="bg-red-50 p-3 rounded-lg text-sm text-red-700 mb-2 overflow-x-auto">❌ Lỗi - ${userId}: ${JSON.stringify(
-              result,
-              null,
-              2
-            )}</pre>`
+            `<div class="bg-red-50 p-3 rounded-lg text-sm text-red-700 mb-2 border-l-4 border-red-500">❌ <strong>Lỗi - ${userId}</strong>: ${result.message || 'Không xác định'}</div>`
         );
         return false;
       }
@@ -1120,26 +1114,97 @@ const App: React.FC = () => {
       return;
     }
 
-    setMessageResponse(
-      '<h3 class="text-lg font-semibold text-blue-600">Đang gửi tin nhắn...</h3>'
-    );
+    const totalUsers = Math.min(userIds.length, 50);
     let successCount = 0;
     let errorCount = 0;
+    let processedCount = 0;
+
+    setMessageResponse(`
+      <div class="mb-4">
+        <h3 class="text-lg font-semibold text-blue-600 mb-3">📤 Đang gửi tin nhắn...</h3>
+        <div class="bg-gray-200 rounded-full h-6 overflow-hidden relative">
+          <div id="progress-bar" class="bg-gradient-to-r from-blue-500 to-blue-600 h-full transition-all duration-300 flex items-center justify-center text-white text-sm font-semibold" style="width: 0%">
+            <span id="progress-text">0%</span>
+          </div>
+        </div>
+        <div class="mt-2 text-sm text-gray-600 flex justify-between">
+          <span>Đã gửi: <strong id="sent-count">0</strong>/${totalUsers}</span>
+          <span>
+            <span class="text-green-600">✅ <strong id="success-count">0</strong></span> | 
+            <span class="text-red-600">❌ <strong id="error-count">0</strong></span>
+          </span>
+        </div>
+      </div>
+      <div id="message-details" class="max-h-60 overflow-y-auto"></div>
+    `);
 
     for (const userId of userIds.slice(0, 50)) {
       const success = await sendMessageToUser(userId);
+      processedCount++;
+      
       if (success) {
         successCount++;
+        // Update progress for success
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const sentCount = document.getElementById('sent-count');
+        const successCountEl = document.getElementById('success-count');
+        const messageDetails = document.getElementById('message-details');
+        
+        if (progressBar && progressText && sentCount && successCountEl && messageDetails) {
+          const percentage = Math.round((processedCount / totalUsers) * 100);
+          progressBar.style.width = `${percentage}%`;
+          progressText.textContent = `${percentage}%`;
+          sentCount.textContent = processedCount.toString();
+          successCountEl.textContent = successCount.toString();
+          
+          messageDetails.innerHTML += `<div class="bg-green-50 p-2 rounded text-sm text-green-700 mb-1 border-l-4 border-green-500">✅ <strong>${userId}</strong>: Gửi thành công</div>`;
+          messageDetails.scrollTop = messageDetails.scrollHeight;
+        }
       } else {
         errorCount++;
+        // Update progress for error
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const sentCount = document.getElementById('sent-count');
+        const errorCountEl = document.getElementById('error-count');
+        
+        if (progressBar && progressText && sentCount && errorCountEl) {
+          const percentage = Math.round((processedCount / totalUsers) * 100);
+          progressBar.style.width = `${percentage}%`;
+          progressText.textContent = `${percentage}%`;
+          sentCount.textContent = processedCount.toString();
+          errorCountEl.textContent = errorCount.toString();
+        }
       }
+      
       await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    // Final summary
+    const progressBar = document.getElementById('progress-bar');
+    if (progressBar) {
+      progressBar.classList.remove('from-blue-500', 'to-blue-600');
+      if (errorCount === 0) {
+        progressBar.classList.add('from-green-500', 'to-green-600');
+      } else {
+        progressBar.classList.add('from-yellow-500', 'to-orange-600');
+      }
     }
 
     setMessageResponse(
       (prev) =>
         prev +
-        `<div class="mt-4 p-4 bg-blue-50 rounded-lg"><h4 class="font-semibold text-blue-700">Tổng kết:</h4><p class="text-blue-600">Thành công: ${successCount} | Lỗi: ${errorCount}</p></div>`
+        `<div class="mt-4 p-4 bg-gradient-to-r ${errorCount === 0 ? 'from-green-50 to-emerald-50 border-green-500' : 'from-yellow-50 to-orange-50 border-yellow-500'} rounded-lg border-l-4">
+          <h4 class="font-semibold ${errorCount === 0 ? 'text-green-700' : 'text-orange-700'} text-lg mb-2">
+            ${errorCount === 0 ? '🎉 Hoàn thành!' : '⚠️ Hoàn thành với lỗi'}
+          </h4>
+          <div class="flex gap-6 ${errorCount === 0 ? 'text-green-600' : 'text-orange-600'} font-medium">
+            <span>✅ Thành công: <strong class="text-xl">${successCount}</strong></span>
+            <span>❌ Lỗi: <strong class="text-xl">${errorCount}</strong></span>
+            <span>📊 Tổng: <strong class="text-xl">${totalUsers}</strong></span>
+          </div>
+        </div>`
     );
   };
 
@@ -1152,17 +1217,30 @@ const App: React.FC = () => {
       return;
     }
 
-    setMessageResponse(
-      '<h3 class="text-lg font-semibold text-blue-600">Đang gửi tin nhắn...</h3>'
-    );
+    setMessageResponse(`
+      <div class="mb-4">
+        <h3 class="text-lg font-semibold text-blue-600 mb-3">📤 Đang gửi tin nhắn test...</h3>
+        <div class="flex items-center gap-3">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span class="text-gray-600">Đang xử lý...</span>
+        </div>
+      </div>
+    `);
+    
     const success = await sendMessageToUser(userId, true);
-    setMessageResponse(
-      (prev) =>
-        prev +
-        `<div class="mt-4 p-4 bg-blue-50 rounded-lg"><h4 class="font-semibold text-blue-700">Tổng kết:</h4><p class="text-blue-600">${
-          success ? "Gửi thành công!" : "Gửi thất bại."
-        }</p></div>`
-    );
+    
+    setMessageResponse(`
+      <div class="p-4 ${success ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-500' : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-500'} rounded-lg border-l-4">
+        <h4 class="font-semibold ${success ? 'text-green-700' : 'text-red-700'} text-lg mb-2">
+          ${success ? '🎉 Gửi thành công!' : '❌ Gửi thất bại'}
+        </h4>
+        <p class="${success ? 'text-green-600' : 'text-red-600'} font-medium">
+          ${success 
+            ? `Tin nhắn test đã được gửi đến <strong>${userId}</strong>` 
+            : 'Vui lòng kiểm tra lại thông tin và thử lại'}
+        </p>
+      </div>
+    `);
   };
 
   // Clear message history
@@ -1233,7 +1311,7 @@ const App: React.FC = () => {
         <button
           onClick={openModal}
           className="absolute text-gray-600 hover:text-gray-800 w-10 h-10 flex items-center justify-center"
-          title="Cấu hình User ID"
+          title="Cấu hình Access Token & User ID"
           style={{
             fontSize: "24px",
             top: "20px",
@@ -1265,23 +1343,41 @@ const App: React.FC = () => {
                 backgroundColor: "white",
                 padding: "2rem",
                 borderRadius: "1rem",
-                maxWidth: "400px",
+                maxWidth: "500px",
                 width: "90%",
                 boxShadow: "0 20px 40px rgba(0, 0, 0, 0.2)",
               }}
             >
               <h2 className="text-xl font-semibold mb-4 text-center">
-                Cấu hình User ID
+                🔑 Cấu hình Access Token & User ID
               </h2>
-              <label className="block form-label mb-3">User ID của bạn</label>
-              <input
-                type="text"
-                value={userId}
-                style={{ width: "90%" }}
-                onChange={(e) => setUserId(e.target.value)}
-                placeholder="Nhập User ID của bạn"
-                className="input-field mb-4"
-              />
+              
+              <div className="mb-4">
+                <label className="block form-label mb-2">
+                  Mã truy cập (Access Token)
+                </label>
+                <input
+                  type="text"
+                  value={accessToken}
+                  onChange={(e) => setAccessToken(e.target.value)}
+                  placeholder="Nhập Access Token của bạn"
+                  className="input-field"
+                  style={{ width: "90%" }}
+                />
+              </div>
+              
+              <div className="mb-4">
+                <label className="block form-label mb-2">User ID của bạn</label>
+                <input
+                  type="text"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  placeholder="Nhập User ID của bạn"
+                  className="input-field"
+                  style={{ width: "90%" }}
+                />
+              </div>
+              
               <div className="flex gap-4">
                 <button onClick={closeModal} className="btn-secondary flex-1">
                   Đóng
@@ -1300,20 +1396,6 @@ const App: React.FC = () => {
           <p className="subtitle-text">
             Hệ thống quản lý tin nhắn và người dùng Zalo Official Account
           </p>
-        </div>
-
-        {/* Access Token */}
-        <div className="mb-8">
-          <label className="block form-label mb-3">
-            Mã truy cập (Access Token)
-          </label>
-          <input
-            type="text"
-            value={accessToken}
-            onChange={(e) => setAccessToken(e.target.value)}
-            placeholder="Nhập mã truy cập của bạn"
-            className="input-field"
-          />
         </div>
 
         {/* Tabs */}
@@ -1346,6 +1428,13 @@ const App: React.FC = () => {
           {activeTab === "userList" && (
             <div className="mb-6">
               <h2 className="section-header">Lấy danh sách người dùng</h2>
+
+              <div style={{marginBottom: '12px', padding: '12px', backgroundColor: '#e6f2ff', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #b3d9ff'}}>
+                <span style={{fontSize: '18px'}}>💡</span>
+                <span style={{fontSize: '13px', color: '#0068FF', fontWeight: '500'}}>
+                  <strong>Ví dụ:</strong> Muốn tìm người thứ 51 đến 100 → nhập <strong>Offset: 51</strong>, <strong>Số lượng: 50</strong>
+                </span>
+              </div>
 
               <div className="flex items-end gap-6 mb-8 flex-nowrap overflow-auto">
                 <div className="flex-none">
@@ -1538,8 +1627,28 @@ const App: React.FC = () => {
                       </div>
                     ))}
                   </div>
-                  <div className="attachment-history-note">
-                    💡 Click "Sử dụng" để copy ID và áp dụng vào form gửi tin nhắn
+                  <div style={{marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAttachmentTip(!showAttachmentTip)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '18px',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                      title="Xem gợi ý"
+                    >
+                      💡
+                    </button>
+                    {showAttachmentTip && (
+                      <div className="attachment-history-note" style={{margin: 0}}>
+                        Click "Sử dụng" để copy ID và áp dụng vào form gửi tin nhắn
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1579,8 +1688,8 @@ const App: React.FC = () => {
                     <select
                       value={headerAlign}
                       onChange={(e) => setHeaderAlign(e.target.value as "left" | "center" | "right")}
-                      className="input-field compact"
-                      style={{width: 'auto', padding: '4px 8px', fontSize: '13px'}}
+                      className="input-field compact w-150"
+                      style={{ padding: '4px 8px', fontSize: '13px'}}
                     >
                       <option value="left">⬅️ Căn trái</option>
                       <option value="center">↔️ Căn giữa</option>
@@ -1603,8 +1712,8 @@ const App: React.FC = () => {
                     <select
                       value={messageAlign}
                       onChange={(e) => setMessageAlign(e.target.value as "left" | "center" | "right")}
-                      className="input-field compact"
-                      style={{width: 'auto', padding: '4px 8px', fontSize: '13px'}}
+                      className="input-field compact w-200"
+                      style={{ padding: '4px 8px', fontSize: '13px'}}
                       title="Zalo OA không hỗ trợ căn đều (justify)"
                     >
                       <option value="left">⬅️ Căn trái (Khuyến nghị)</option>
@@ -1691,10 +1800,29 @@ const App: React.FC = () => {
                     
                     <div style={{height: '20px', width: '1px', background: '#d1d5db'}}></div>
                     
-                    <span style={{fontSize: '11px', color: '#6b7280'}}>
-                      💡 <code style={{background: '#f3f4f6', padding: '2px 4px', borderRadius: '3px', fontSize: '10px'}}>&lt;br&gt;</code> xuống dòng | 
-                      <code style={{background: '#f3f4f6', padding: '2px 4px', borderRadius: '3px', fontSize: '10px', marginLeft: '4px'}}>&amp;nbsp;</code> thụt đầu dòng
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowMessageFormatTip(!showMessageFormatTip)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '18px',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                      title="Xem gợi ý"
+                    >
+                      💡
+                    </button>
+                    
+                    {showMessageFormatTip && (
+                      <span style={{fontSize: '11px', color: '#6b7280'}}>
+                        <code style={{background: '#f3f4f6', padding: '2px 4px', borderRadius: '3px', fontSize: '10px'}}>&lt;br&gt;</code> xuống dòng | 
+                        <code style={{background: '#f3f4f6', padding: '2px 4px', borderRadius: '3px', fontSize: '10px', marginLeft: '4px'}}>&amp;nbsp;</code> thụt đầu dòng
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -1713,19 +1841,43 @@ const App: React.FC = () => {
                     </span>
                   </div>
                   
-                  <div className="table-info-compact">
-                    <h4 className="table-info-title">📋 Thông tin bảng tự động:</h4>
-                    <div className="table-info-grid">
-                      <div><strong>Nhãn:</strong> Từ ô bên dưới</div>
-                      <div><strong>Dòng 1:</strong> {useUserName ? 'Tên user, nếu không có -> lấy dự phòng bên dưới' : 'Chỉ dự phòng bên dưới'}</div>
-                      <div><strong>Dòng 2:</strong> {useUserCode ? 'Code user, nếu không có -> lấy dự phòng bên dưới' : 'Chỉ dự phòng bên dưới'}</div>
-                      <div><strong>Hiển thị:</strong> Dòng có dữ liệu</div>
-                    </div>
-                  </div>
+                  <div style={{marginTop: '12px', display: 'flex', alignItems: 'flex-start', gap: '8px'}}>
+                    <button
+                      type="button"
+                      onClick={() => setShowTableInfoTip(!showTableInfoTip)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '18px',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                      }}
+                      title="Xem thông tin bảng tự động"
+                    >
+                      💡
+                    </button>
+                    
+                    {showTableInfoTip && (
+                      <div style={{flex: 1}}>
+                        <div className="table-info-compact" style={{marginTop: 0}}>
+                          <h4 className="table-info-title">📋 Thông tin bảng tự động:</h4>
+                          <div className="table-info-grid">
+                            <div><strong>Nhãn:</strong> Từ ô bên dưới</div>
+                            <div><strong>Dòng 1:</strong> {useUserName ? 'Tên user, nếu không có -> lấy dự phòng bên dưới' : 'Chỉ dự phòng bên dưới'}</div>
+                            <div><strong>Dòng 2:</strong> {useUserCode ? 'Code user, nếu không có -> lấy dự phòng bên dưới' : 'Chỉ dự phòng bên dưới'}</div>
+                            <div><strong>Hiển thị:</strong> Dòng có dữ liệu</div>
+                          </div>
+                        </div>
 
-                  <div className="smart-table-tip-compact">
-                    <span className="tip-icon">💡</span>
-                    <strong>Ví dụ:</strong> Không có code <span className="tip-arrow">→</span> dùng ô "Giá trị" thủ công
+                        <div className="smart-table-tip-compact" style={{marginTop: '8px'}}>
+                          <span className="tip-icon">💡</span>
+                          <strong>Ví dụ:</strong> Không có code <span className="tip-arrow">→</span> dùng ô "Giá trị" thủ công
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {enableTable && (
@@ -1753,8 +1905,28 @@ const App: React.FC = () => {
                           <span className="checkbox-label-text">🔑 Dòng 2: Lấy từ <strong>Code user</strong></span>
                         </label>
                       </div>
-                      <div className="checkbox-hint">
-                        💡 Không check = dùng giá trị thủ công bên dưới
+                      <div style={{marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                        <button
+                          type="button"
+                          onClick={() => setShowTableSourceTip(!showTableSourceTip)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '18px',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                          }}
+                          title="Xem gợi ý"
+                        >
+                          💡
+                        </button>
+                        {showTableSourceTip && (
+                          <div className="checkbox-hint" style={{margin: 0}}>
+                            Không check = dùng giá trị thủ công bên dưới
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1821,8 +1993,28 @@ const App: React.FC = () => {
                         </div>
                       ))}
                     </div>
-                    <div style={{marginTop: '8px', fontSize: '12px', color: '#6b7280'}}>
-                      💡 Dòng {tableRows.length}/2 | Tối thiểu 1 dòng, tối đa 2 dòng
+                    <div style={{marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                      <button
+                        type="button"
+                        onClick={() => setShowTableRowsTip(!showTableRowsTip)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '18px',
+                          padding: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                        title="Xem gợi ý"
+                      >
+                        💡
+                      </button>
+                      {showTableRowsTip && (
+                        <div style={{fontSize: '12px', color: '#6b7280'}}>
+                          Dòng {tableRows.length}/2 | Tối thiểu 1 dòng, tối đa 2 dòng
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
