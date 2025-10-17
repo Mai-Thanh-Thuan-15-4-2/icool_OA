@@ -5,6 +5,7 @@ import "./App.css";
 interface User {
   user_id: string;
   display_name?: string;
+  avatar?: string;
   code?: string;
 }
 
@@ -357,6 +358,7 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
           <thead>
             <tr class="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
               <th class="py-4 px-6 text-left font-semibold">STT</th>
+              <th class="py-4 px-6 text-left font-semibold">Avatar</th>
               <th class="py-4 px-6 text-left font-semibold">User ID</th>
               <th class="py-4 px-6 text-left font-semibold">Tên hiển thị</th>
               <th class="py-4 px-6 text-left font-semibold">Code</th>
@@ -369,6 +371,17 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
       tableHtml += `
         <tr class="hover:bg-blue-50 transition-colors duration-200 border-b border-gray-100">
           <td class="py-3 px-6 text-gray-700">${index + 1}</td>
+          <td class="py-3 px-6">
+            ${user.avatar ? 
+              `<img src="${user.avatar}" alt="Avatar" class="w-10 h-10 rounded-full object-cover border-2 border-gray-200" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPGNpcmNsZSBjeD0iMjAiIGN5PSIxNiIgcj0iNiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNOCAzMkM4IDI2LjQ3NzIgMTIuNDc3MiAyMiAxOCAyMkMyMy41MjI4IDIyIDI4IDI2LjQ3NzIgMjggMzIiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+Cg=='" />` : 
+              `<div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-300">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="8" r="3" fill="#9CA3AF"/>
+                  <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>`
+            }
+          </td>
           <td class="py-3 px-6 text-gray-700 font-mono text-sm">${user.user_id}</td>
           <td class="py-3 px-6 text-gray-700">${user.display_name}</td>
           <td class="py-3 px-6">
@@ -408,7 +421,7 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
       return;
     }
 
-    // Prepare data for Excel
+    // Prepare data for Excel (no Avatar column)
     const exportData = users.map((user, index) => ({
       'STT': index + 1,
       'User ID': user.user_id,
@@ -483,6 +496,8 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
             const user: User = {
               user_id: userId.toString().trim(),
               display_name: (row['Tên hiển thị'] || row['display_name'] || row['Name'] || row['Tên'] || 'Không có tên').toString(),
+              // Avatar column removed from import — set empty by default
+              avatar: ''.toString(),
               code: (row['Code'] || row['code'] || row['Mã'] || '').toString()
             };
             importedUsers.push(user);
@@ -793,6 +808,7 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
           usersWithDetails.push({
             user_id: user.user_id,
             display_name: userDetail?.display_name || "Không có tên",
+            avatar: userDetail?.avatar || "",
             code: ""
           });
         }
@@ -807,6 +823,7 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
               <thead>
                 <tr class="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
                   <th class="py-4 px-6 text-left font-semibold">STT</th>
+                  <th class="py-4 px-6 text-left font-semibold">Avatar</th>
                   <th class="py-4 px-6 text-left font-semibold">User ID</th>
                   <th class="py-4 px-6 text-left font-semibold">Tên hiển thị</th>
                   <th class="py-4 px-6 text-left font-semibold">Code</th>
@@ -819,6 +836,17 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
           tableHtml += `
             <tr class="hover:bg-blue-50 transition-colors duration-200 border-b border-gray-100">
               <td class="py-3 px-6 text-gray-700">${index + 1}</td>
+              <td class="py-3 px-6">
+                ${user.avatar ? 
+                  `<img src="${user.avatar}" alt="Avatar" class="img-w-50 img-h-50 rounded-full object-cover" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPGNpcmNsZSBjeD0iMjAiIGN5PSIxNiIgcj0iNiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNOCAzMkM4IDI2LjQ3NzIgMTIuNDc3MiAyMiAxOCAyMkMyMy41MjI4IDIyIDI4IDI2LjQ3NzIgMjggMzIiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+Cg=='" />` : 
+                  `<div class="img-w-50 img-h-50 rounded-full bg-gray-200 flex items-center justify-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="8" r="3" fill="#9CA3AF"/>
+                      <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>`
+                }
+              </td>
               <td class="py-3 px-6 text-gray-700 font-mono text-sm">${user.user_id}</td>
               <td class="py-3 px-6 text-gray-700">${user.display_name}</td>
               <td class="py-3 px-6">

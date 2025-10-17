@@ -138,6 +138,12 @@ body {
 .w-200 {
   width: 200px !important;
 }
+.img-w-50 {
+  width: 50px !important;
+}
+.img-h-50 {
+  height: 50px !important;
+}
 
 .drop-area::before {
   content: '';
