@@ -1914,7 +1914,9 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                   </div>
 
                   {/* Dropdown loại giao dịch */}
-                                <div
+                  {messageType === "transaction" && (
+                    <div className="ml-12 mt-4 p-4 bg-white/70 rounded-lg shadow-sm">
+                                                      <div
                 style={{
                   marginBottom: "12px",
                   padding: "12px",
@@ -1948,8 +1950,6 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                   Loại giao dịch là tag của tin nhắn giao dịch bạn muốn gửi.
                 </span>
               </div>
-                  {messageType === "transaction" && (
-                    <div className="ml-12 mt-4 p-4 bg-white/70 rounded-lg shadow-sm">
                       <label className="block text-sm font-medium text-blue-700 mb-2">
                         Chọn loại giao dịch:
                       </label>
