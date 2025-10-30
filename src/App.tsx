@@ -1909,11 +1909,45 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                       <span className="toggle-slider"></span>
                     </label>
                     <span className="font-semibold text-blue-800">
-                      Tin nhắn giao dịch gửi cho khách hàng chưa quan tâm
+                      Tin nhắn giao dịch gửi cho khách hàng <strong>chưa quan tâm</strong> và <strong>đã quan tâm</strong>
                     </span>
                   </div>
 
                   {/* Dropdown loại giao dịch */}
+                                <div
+                style={{
+                  marginBottom: "12px",
+                  padding: "12px",
+                  backgroundColor: "#e6f2ff",
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  border: "1px solid #b3d9ff",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "18px",
+                    color: "#6b7280",
+                    padding: "2px 6px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  ⚡
+                </span>
+                <span
+                  style={{
+                    fontSize: "13px",
+                    color: "#0068FF",
+                    fontWeight: "500",
+                  }}
+                >
+                  Loại giao dịch là tag của tin nhắn giao dịch bạn muốn gửi.
+                </span>
+              </div>
                   {messageType === "transaction" && (
                     <div className="ml-12 mt-4 p-4 bg-white/70 rounded-lg shadow-sm">
                       <label className="block text-sm font-medium text-blue-700 mb-2">
@@ -1938,8 +1972,8 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                       </div>
 
                       <p className="mt-2 text-xs text-gray-600">
-                        Gửi tin <strong>giao dịch</strong> cho người{" "}
-                        <strong>chưa quan tâm</strong> OA
+                        Gửi tin <strong>giao dịch</strong> kể cả cho người{" "}
+                        <strong>chưa quan tâm</strong> và <strong>đã quan tâm</strong> OA
                       </p>
                     </div>
                   )}
