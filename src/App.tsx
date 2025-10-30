@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import * as XLSX from 'xlsx';
+import * as XLSX from "xlsx";
 import "./App.css";
 
 interface User {
@@ -51,6 +51,22 @@ interface UserHistory {
   code: string;
   timestamp: number;
 }
+/* ==================== DANH SÁCH LOẠI GIAO DỊCH ==================== */
+const TRANSACTION_TYPES = [
+  { value: "transaction_billing", label: "Hóa đơn" },
+  { value: "transaction_order", label: "Đơn hàng" },
+  { value: "transaction_reward", label: "Tích điểm" },
+  { value: "transaction_contract", label: "Hợp đồng" },
+  { value: "transaction_booking", label: "Lịch hẹn" },
+  { value: "transaction_membership", label: "Thành viên" },
+  { value: "transaction_event", label: "Sự kiện" },
+  { value: "transaction_transaction", label: "Giao dịch" },
+  { value: "transaction_account", label: "Tài khoản" },
+  { value: "transaction_internal", label: "Nội bộ" },
+  { value: "transaction_partnership", label: "Đối tác" },
+  { value: "transaction_rating", label: "Đánh giá" },
+];
+/* ================================================================ */
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState("userList");
@@ -64,8 +80,10 @@ const App: React.FC = () => {
   const [headerContent, setHeaderContent] = useState(
     "🎤 Khai trương ICOOL Sư Vạn Hạnh"
   );
-  const [headerAlign, setHeaderAlign] = useState<"left" | "center" | "right">("left");
-  
+  const [headerAlign, setHeaderAlign] = useState<"left" | "center" | "right">(
+    "left"
+  );
+
   // Default message content (plain text format - chưa format)
   const defaultMessageContent = `Mến chào Quý Khách,
 ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
@@ -73,9 +91,11 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
   - Áp dụng tất cả khung giờ từ chủ nhật đến thứ 5 hàng tuần (thứ 6, thứ 7 và ngày lễ theo quy định của ICOOL áp dụng khi mở bill trước 20h) trên toàn Hệ thống Karaoke ICOOL.
   - Không áp dụng đồng thời các ưu đãi khác.
   - Thời hạn áp dụng: từ ngày nhận voucher đến 25/10/2025.`;
-  
+
   const [messageContent, setMessageContent] = useState(defaultMessageContent);
-  const [messageAlign, setMessageAlign] = useState<"left" | "center" | "right">("left");
+  const [messageAlign, setMessageAlign] = useState<"left" | "center" | "right">(
+    "left"
+  );
   const [tableRows, setTableRows] = useState<TableRow[]>([
     { key: "Tên khách hàng", value: "Duyên" },
     { key: "Mã ưu đãi", value: "ACBDBMN" },
@@ -95,39 +115,51 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [attachmentHistory, setAttachmentHistory] = useState<string[]>([]);
-  
+
   // Button configuration states
   const [enableBookingButton, setEnableBookingButton] = useState(true);
-  const [bookingButtonTitle, setBookingButtonTitle] = useState("Đặt phòng ngay");
-  const [bookingButtonUrl, setBookingButtonUrl] = useState("https://zalo.me/s/4496742181481836529/?utm_source=zalo-qr");
+  const [bookingButtonTitle, setBookingButtonTitle] =
+    useState("Đặt phòng ngay");
+  const [bookingButtonUrl, setBookingButtonUrl] = useState(
+    "https://zalo.me/s/4496742181481836529/?utm_source=zalo-qr"
+  );
   const [enableDetailButton, setEnableDetailButton] = useState(false);
   const [detailButtonTitle, setDetailButtonTitle] = useState("Xem chi tiết");
-  const [detailButtonUrl, setDetailButtonUrl] = useState("https://karaoke.com.vn/tin-tuc/");
+  const [detailButtonUrl, setDetailButtonUrl] = useState(
+    "https://karaoke.com.vn/tin-tuc/"
+  );
   const [enableFooter, setEnableFooter] = useState(true);
-  
+
   // User history states
   const [userHistory, setUserHistory] = useState<UserHistory[]>([]);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
-  
-  // Table data source preferences  
+
+  // Table data source preferences
   const [useUserName, setUseUserName] = useState(true);
   const [useUserCode, setUseUserCode] = useState(true);
 
   // Tooltip visibility states
   const [showAttachmentTip, setShowAttachmentTip] = useState(false);
-  const [showMessageFormatTip, setShowMessageFormatTip] = useState(false);
   const [showTableInfoTip, setShowTableInfoTip] = useState(false);
-  const [showTableSourceTip, setShowTableSourceTip] = useState(false);
-  const [showTableRowsTip, setShowTableRowsTip] = useState(false);
+
+  /* ==================== THÊM STATE CHO LOẠI TIN ==================== */
+  const [messageType, setMessageType] = useState<"transaction" | "promotion">(
+    "promotion"
+  );
+  const [transactionTemplateType, setTransactionTemplateType] =
+    useState("transaction_event");
+  /* ================================================================ */
 
   // Auto format state
   const [isMessageFormatted, setIsMessageFormatted] = useState(false);
-  const [originalMessageContent, setOriginalMessageContent] = useState(defaultMessageContent);
+  const [originalMessageContent, setOriginalMessageContent] = useState(
+    defaultMessageContent
+  );
   const [isFormatting, setIsFormatting] = useState(false);
 
   // Load attachment history from localStorage on component mount
   useEffect(() => {
-    const savedHistory = localStorage.getItem('attachmentHistory');
+    const savedHistory = localStorage.getItem("attachmentHistory");
     if (savedHistory) {
       try {
         const history = JSON.parse(savedHistory);
@@ -137,18 +169,18 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
           setAttachmentId(history[0]);
         }
       } catch (error) {
-        console.error('Error loading attachment history:', error);
+        console.error("Error loading attachment history:", error);
       }
     }
-    
+
     // Load user history
-    const savedUserHistory = localStorage.getItem('userHistory');
+    const savedUserHistory = localStorage.getItem("userHistory");
     if (savedUserHistory) {
       try {
         const history = JSON.parse(savedUserHistory);
         setUserHistory(history);
       } catch (error) {
-        console.error('Error loading user history:', error);
+        console.error("Error loading user history:", error);
       }
     }
   }, []);
@@ -158,22 +190,24 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
     const historyItem: UserHistory = {
       id: `${user.user_id}_${Date.now()}`,
       user_id: user.user_id,
-      display_name: user.display_name || 'Không có tên',
-      code: user.code || '',
-      timestamp: Date.now()
+      display_name: user.display_name || "Không có tên",
+      code: user.code || "",
+      timestamp: Date.now(),
     };
-    
-    setUserHistory(prevHistory => {
+
+    setUserHistory((prevHistory) => {
       // Remove duplicate if exists
-      const filteredHistory = prevHistory.filter(item => item.user_id !== user.user_id);
+      const filteredHistory = prevHistory.filter(
+        (item) => item.user_id !== user.user_id
+      );
       // Add new item to the beginning
       const newHistory = [historyItem, ...filteredHistory];
       // Keep only latest 50 items
       const limitedHistory = newHistory.slice(0, 50);
-      
+
       // Save to localStorage
-      localStorage.setItem('userHistory', JSON.stringify(limitedHistory));
-      
+      localStorage.setItem("userHistory", JSON.stringify(limitedHistory));
+
       return limitedHistory;
     });
   };
@@ -181,60 +215,68 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
   // Function to delete selected history items
   const deleteSelectedHistory = () => {
     if (selectedHistoryIds.length === 0) {
-      alert('Vui lòng chọn ít nhất một mục để xóa!');
+      alert("Vui lòng chọn ít nhất một mục để xóa!");
       return;
     }
-    
-    if (confirm(`Bạn có chắc muốn xóa ${selectedHistoryIds.length} mục đã chọn?`)) {
-      setUserHistory(prevHistory => {
-        const newHistory = prevHistory.filter(item => !selectedHistoryIds.includes(item.id));
-        localStorage.setItem('userHistory', JSON.stringify(newHistory));
+
+    if (
+      confirm(`Bạn có chắc muốn xóa ${selectedHistoryIds.length} mục đã chọn?`)
+    ) {
+      setUserHistory((prevHistory) => {
+        const newHistory = prevHistory.filter(
+          (item) => !selectedHistoryIds.includes(item.id)
+        );
+        localStorage.setItem("userHistory", JSON.stringify(newHistory));
         return newHistory;
       });
-      
+
       // Also remove corresponding message history for selected users
       const selectedUserIds = userHistory
-        .filter(item => selectedHistoryIds.includes(item.id))
-        .map(item => item.user_id);
-      
-      setMessageHistory(prevMessageHistory => 
-        prevMessageHistory.filter(msg => !selectedUserIds.includes(msg.user_id))
+        .filter((item) => selectedHistoryIds.includes(item.id))
+        .map((item) => item.user_id);
+
+      setMessageHistory((prevMessageHistory) =>
+        prevMessageHistory.filter(
+          (msg) => !selectedUserIds.includes(msg.user_id)
+        )
       );
-      
+
       setSelectedHistoryIds([]);
     }
   };
 
   // Function to delete single history item
   const deleteSingleHistory = (id: string) => {
-    if (confirm('Bạn có chắc muốn xóa mục này?')) {
+    if (confirm("Bạn có chắc muốn xóa mục này?")) {
       // Find the user_id for this history item
-      const historyItem = userHistory.find(item => item.id === id);
+      const historyItem = userHistory.find((item) => item.id === id);
       const userId = historyItem?.user_id;
-      
-      setUserHistory(prevHistory => {
-        const newHistory = prevHistory.filter(item => item.id !== id);
-        localStorage.setItem('userHistory', JSON.stringify(newHistory));
+
+      setUserHistory((prevHistory) => {
+        const newHistory = prevHistory.filter((item) => item.id !== id);
+        localStorage.setItem("userHistory", JSON.stringify(newHistory));
         return newHistory;
       });
-      
+
       // Also remove corresponding message history for this user
       if (userId) {
-        setMessageHistory(prevMessageHistory => 
-          prevMessageHistory.filter(msg => msg.user_id !== userId)
+        setMessageHistory((prevMessageHistory) =>
+          prevMessageHistory.filter((msg) => msg.user_id !== userId)
         );
       }
-      
+
       // Remove from selected if it was selected
-      setSelectedHistoryIds(prev => prev.filter(selectedId => selectedId !== id));
+      setSelectedHistoryIds((prev) =>
+        prev.filter((selectedId) => selectedId !== id)
+      );
     }
   };
 
   // Function to toggle history item selection
   const toggleHistorySelection = (id: string) => {
-    setSelectedHistoryIds(prev => 
-      prev.includes(id) 
-        ? prev.filter(selectedId => selectedId !== id)
+    setSelectedHistoryIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((selectedId) => selectedId !== id)
         : [...prev, id]
     );
   };
@@ -244,33 +286,35 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
     if (selectedHistoryIds.length === userHistory.length) {
       setSelectedHistoryIds([]);
     } else {
-      setSelectedHistoryIds(userHistory.map(item => item.id));
+      setSelectedHistoryIds(userHistory.map((item) => item.id));
     }
   };
 
   // Function to clear all history
   const clearAllHistory = () => {
-    if (confirm('Bạn có chắc muốn xóa toàn bộ lịch sử?')) {
+    if (confirm("Bạn có chắc muốn xóa toàn bộ lịch sử?")) {
       setUserHistory([]);
       setSelectedHistoryIds([]);
       setMessageHistory([]); // Also clear message history (60 minutes rule)
-      localStorage.removeItem('userHistory');
+      localStorage.removeItem("userHistory");
     }
   };
 
   // Function to save attachment ID to localStorage history
   const saveAttachmentToHistory = (newAttachmentId: string) => {
-    setAttachmentHistory(prevHistory => {
+    setAttachmentHistory((prevHistory) => {
       // Remove if already exists to avoid duplicates
-      const filteredHistory = prevHistory.filter(id => id !== newAttachmentId);
+      const filteredHistory = prevHistory.filter(
+        (id) => id !== newAttachmentId
+      );
       // Add new ID to the beginning
       const newHistory = [newAttachmentId, ...filteredHistory];
       // Keep only the latest 3 IDs
       const limitedHistory = newHistory.slice(0, 3);
-      
+
       // Save to localStorage
-      localStorage.setItem('attachmentHistory', JSON.stringify(limitedHistory));
-      
+      localStorage.setItem("attachmentHistory", JSON.stringify(limitedHistory));
+
       return limitedHistory;
     });
   };
@@ -278,19 +322,19 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
   // Function to add new table row
   const addTableRow = () => {
     if (tableRows.length >= 2) {
-      alert('Tối đa 2 dòng!');
+      alert("Tối đa 2 dòng!");
       return;
     }
-    setTableRows(prev => [...prev, { key: "", value: "" }]);
+    setTableRows((prev) => [...prev, { key: "", value: "" }]);
   };
 
   // Function to remove table row
   const removeTableRow = (index: number) => {
     if (tableRows.length <= 1) {
-      alert('Tối thiểu 1 dòng!');
+      alert("Tối thiểu 1 dòng!");
       return;
     }
-    setTableRows(prev => prev.filter((_, i) => i !== index));
+    setTableRows((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Memoize the copy function
@@ -330,28 +374,31 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
 
   // Update code for a user
   const updateUserCode = useCallback((userId: string, code: string) => {
-    setUsers(prevUsers => 
-      prevUsers.map(user => 
+    setUsers((prevUsers) =>
+      prevUsers.map((user) =>
         user.user_id === userId ? { ...user, code } : user
       )
     );
   }, []);
 
   // Remove user from list
-  const removeUser = useCallback((userId: string) => {
-    setUsers(prevUsers => prevUsers.filter(user => user.user_id !== userId));
-    setUserIds(prevUserIds => prevUserIds.filter(id => id !== userId));
-    
-    // Update the table display
-    const updatedUsers = users.filter(user => user.user_id !== userId);
-    if (updatedUsers.length === 0) {
-      setUserListResponse(
-        '<h3 class="text-lg font-semibold text-gray-700">Kết quả:</h3><p class="text-gray-600">Không có người dùng nào trong danh sách.</p>'
+  const removeUser = useCallback(
+    (userId: string) => {
+      setUsers((prevUsers) =>
+        prevUsers.filter((user) => user.user_id !== userId)
       );
-      return;
-    }
-    
-    let tableHtml = `
+      setUserIds((prevUserIds) => prevUserIds.filter((id) => id !== userId));
+
+      // Update the table display
+      const updatedUsers = users.filter((user) => user.user_id !== userId);
+      if (updatedUsers.length === 0) {
+        setUserListResponse(
+          '<h3 class="text-lg font-semibold text-gray-700">Kết quả:</h3><p class="text-gray-600">Không có người dùng nào trong danh sách.</p>'
+        );
+        return;
+      }
+
+      let tableHtml = `
       <h3 class="text-lg font-semibold text-gray-700 mb-4">Danh sách người dùng</h3>
       <div class="overflow-x-auto">
         <table class="w-full bg-white rounded-xl shadow-lg">
@@ -367,14 +414,15 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
           </thead>
           <tbody>
     `;
-    updatedUsers.forEach((user, index) => {
-      tableHtml += `
+      updatedUsers.forEach((user, index) => {
+        tableHtml += `
         <tr class="hover:bg-blue-50 transition-colors duration-200 border-b border-gray-100">
           <td class="py-3 px-6 text-gray-700">${index + 1}</td>
           <td class="py-3 px-6">
-            ${user.avatar ? 
-              `<img src="${user.avatar}" alt="Avatar" class="img-w-50 img-h-50 rounded-full object-cover" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPGNpcmNsZSBjeD0iMjAiIGN5PSIxNiIgcj0iNiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNOCAzMkM4IDI2LjQ3NzIgMTIuNDc3MiAyMiAxOCAyMkMyMy41MjI4IDIyIDI4IDI2LjQ3NzIgMjggMzIiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+Cg=='" />` : 
-              `<div class="img-w-50 img-h-50 rounded-full bg-gray-200 flex items-center justify-center">
+            ${
+              user.avatar
+                ? `<img src="${user.avatar}" alt="Avatar" class="img-w-50 img-h-50 rounded-full object-cover" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPGNpcmNsZSBjeD0iMjAiIGN5PSIxNiIgcj0iNiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNOCAzMkM4IDI2LjQ3NzIgMTIuNDc3MiAyMiAxOCAyMkMyMy41MjI4IDIyIDI4IDI2LjQ3NzIgMjggMzIiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+Cg=='" />`
+                : `<div class="img-w-50 img-h-50 rounded-full bg-gray-200 flex items-center justify-center">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="12" cy="8" r="3" fill="#9CA3AF"/>
                   <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -382,12 +430,14 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
               </div>`
             }
           </td>
-          <td class="py-3 px-6 text-gray-700 font-mono text-sm">${user.user_id}</td>
+          <td class="py-3 px-6 text-gray-700 font-mono text-sm">${
+            user.user_id
+          }</td>
           <td class="py-3 px-6 text-gray-700">${user.display_name}</td>
           <td class="py-3 px-6">
             <input 
               type="text" 
-              value="${user.code || ''}" 
+              value="${user.code || ""}" 
               onchange="window.updateUserCode('${user.user_id}', this.value)"
               class="code-input"
               placeholder="Nhập mã (khuyến mãi, tên, v.v.)"
@@ -404,15 +454,17 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
           </td>
         </tr>
       `;
-    });
-    tableHtml += `
+      });
+      tableHtml += `
           </tbody>
         </table>
       </div>
       <p class="mt-4 text-gray-600 font-medium">Tổng số: ${updatedUsers.length}</p>
     `;
-    setUserListResponse(tableHtml);
-  }, [users]);
+      setUserListResponse(tableHtml);
+    },
+    [users]
+  );
 
   // Export users to Excel file
   const exportUsers = useCallback(() => {
@@ -423,35 +475,35 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
 
     // Prepare data for Excel (no Avatar column)
     const exportData = users.map((user, index) => ({
-      'STT': index + 1,
-      'User ID': user.user_id,
-      'Tên hiển thị': user.display_name || 'Không có tên',
-      'Code': user.code || ''
+      STT: index + 1,
+      "User ID": user.user_id,
+      "Tên hiển thị": user.display_name || "Không có tên",
+      Code: user.code || "",
     }));
 
     // Create workbook and worksheet
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.json_to_sheet(exportData);
-    
+
     // Set column widths
     const columnWidths = [
-      { wch: 8 },  // STT
+      { wch: 8 }, // STT
       { wch: 25 }, // User ID
       { wch: 30 }, // Tên hiển thị
-      { wch: 20 }  // Code
+      { wch: 20 }, // Code
     ];
-    worksheet['!cols'] = columnWidths;
+    worksheet["!cols"] = columnWidths;
 
     // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Danh sách khách hàng');
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Danh sách khách hàng");
 
     // Generate filename with current date
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     const filename = `danh-sach-khach-hang-${today}.xlsx`;
 
     // Write and download file
     XLSX.writeFile(workbook, filename);
-    
+
     alert(`Đã xuất ${users.length} người dùng ra file Excel thành công!`);
   }, [users]);
 
@@ -459,9 +511,11 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
   const importUsers = useCallback((file: File) => {
     if (!file) return;
 
-    const allowedExtensions = ['.xlsx', '.xls', '.csv'];
-    const fileExtension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
-    
+    const allowedExtensions = [".xlsx", ".xls", ".csv"];
+    const fileExtension = file.name
+      .toLowerCase()
+      .slice(file.name.lastIndexOf("."));
+
     if (!allowedExtensions.includes(fileExtension)) {
       alert("Vui lòng chọn file Excel (.xlsx, .xls) hoặc CSV!");
       return;
@@ -471,15 +525,15 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        
+        const workbook = XLSX.read(data, { type: "array" });
+
         // Get the first worksheet
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
-        
+
         // Convert to JSON
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
-        
+
         if (jsonData.length === 0) {
           alert("File Excel không có dữ liệu!");
           return;
@@ -487,18 +541,25 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
 
         // Map Excel data to User format
         const importedUsers: User[] = [];
-        
+
         jsonData.forEach((row: any, index: number) => {
           // Try to find User ID from different possible column names
-          const userId = row['User ID'] || row['user_id'] || row['UserID'] || row['ID'];
-          
-          if (userId && typeof userId === 'string') {
+          const userId =
+            row["User ID"] || row["user_id"] || row["UserID"] || row["ID"];
+
+          if (userId && typeof userId === "string") {
             const user: User = {
               user_id: userId.toString().trim(),
-              display_name: (row['Tên hiển thị'] || row['display_name'] || row['Name'] || row['Tên'] || 'Không có tên').toString(),
+              display_name: (
+                row["Tên hiển thị"] ||
+                row["display_name"] ||
+                row["Name"] ||
+                row["Tên"] ||
+                "Không có tên"
+              ).toString(),
               // Avatar column removed from import — set empty by default
-              avatar: ''.toString(),
-              code: (row['Code'] || row['code'] || row['Mã'] || '').toString()
+              avatar: "".toString(),
+              code: (row["Code"] || row["code"] || row["Mã"] || "").toString(),
             };
             importedUsers.push(user);
           } else {
@@ -507,13 +568,15 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
         });
 
         if (importedUsers.length === 0) {
-          alert("Không tìm thấy dữ liệu người dùng hợp lệ trong file!\nVui lòng đảm bảo file có cột 'User ID'.");
+          alert(
+            "Không tìm thấy dữ liệu người dùng hợp lệ trong file!\nVui lòng đảm bảo file có cột 'User ID'."
+          );
           return;
         }
 
         // Update users state
         setUsers(importedUsers);
-        setUserIds(importedUsers.map(user => user.user_id));
+        setUserIds(importedUsers.map((user) => user.user_id));
 
         // Update table display
         let tableHtml = `
@@ -535,13 +598,17 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
           tableHtml += `
             <tr class="hover:bg-blue-50 transition-colors duration-200 border-b border-gray-100">
               <td class="py-3 px-6 text-gray-700">${index + 1}</td>
-              <td class="py-3 px-6 text-gray-700 font-mono text-sm">${user.user_id}</td>
+              <td class="py-3 px-6 text-gray-700 font-mono text-sm">${
+                user.user_id
+              }</td>
               <td class="py-3 px-6 text-gray-700">${user.display_name}</td>
               <td class="py-3 px-6">
                 <input 
                   type="text" 
-                  value="${user.code || ''}" 
-                  onchange="window.updateUserCode('${user.user_id}', this.value)"
+                  value="${user.code || ""}" 
+                  onchange="window.updateUserCode('${
+                    user.user_id
+                  }', this.value)"
                   class="code-input"
                   placeholder="Nhập mã (khuyến mãi, tên, v.v.)"
                 />
@@ -566,9 +633,11 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
         `;
         setUserListResponse(tableHtml);
 
-        alert(`Đã nhập thành công ${importedUsers.length} người dùng từ file Excel!`);
+        alert(
+          `Đã nhập thành công ${importedUsers.length} người dùng từ file Excel!`
+        );
       } catch (error) {
-        console.error('Import error:', error);
+        console.error("Import error:", error);
         alert("Lỗi khi đọc file Excel! Vui lòng kiểm tra định dạng file.");
       }
     };
@@ -576,14 +645,17 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
   }, []);
 
   // Handle import file selection
-  const handleImportFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      importUsers(file);
-    }
-    // Reset input value to allow selecting the same file again
-    e.target.value = '';
-  }, [importUsers]);
+  const handleImportFile = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        importUsers(file);
+      }
+      // Reset input value to allow selecting the same file again
+      e.target.value = "";
+    },
+    [importUsers]
+  );
 
   // Load access token, message history, and user ID from localStorage
   useEffect(() => {
@@ -714,11 +786,15 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
   };
 
   // Fetch user detail from Zalo API
-  const fetchUserDetail = async (userId: string): Promise<UserDetail | null> => {
+  const fetchUserDetail = async (
+    userId: string
+  ): Promise<UserDetail | null> => {
     try {
       const queryData = { user_id: userId };
-      const queryString = `data=${encodeURIComponent(JSON.stringify(queryData))}`;
-      
+      const queryString = `data=${encodeURIComponent(
+        JSON.stringify(queryData)
+      )}`;
+
       const response = await fetch(
         `https://openapi.zalo.me/v3.0/oa/user/detail?${queryString}`,
         {
@@ -734,7 +810,7 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
       }
 
       const result: ApiResponse = await response.json();
-      
+
       if (result.error === 0 && result.data) {
         return {
           user_id: result.data.user_id || userId,
@@ -742,7 +818,8 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
           user_alias: result.data.user_alias || "",
           avatar: result.data.avatar || "",
           user_is_follower: result.data.user_is_follower || false,
-          user_last_interaction_date: result.data.user_last_interaction_date || ""
+          user_last_interaction_date:
+            result.data.user_last_interaction_date || "",
         };
       }
       return null;
@@ -801,7 +878,7 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
         setUserListResponse(
           '<h3 class="text-lg font-semibold text-blue-600">Đang tải thông tin chi tiết...</h3>'
         );
-        
+
         const usersWithDetails: User[] = [];
         for (const user of result.data.users) {
           const userDetail = await fetchUserDetail(user.user_id);
@@ -809,12 +886,12 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
             user_id: user.user_id,
             display_name: userDetail?.display_name || "Không có tên",
             avatar: userDetail?.avatar || "",
-            code: ""
+            code: "",
           });
         }
-        
+
         setUsers(usersWithDetails);
-        setUserIds(usersWithDetails.map(user => user.user_id));
+        setUserIds(usersWithDetails.map((user) => user.user_id));
 
         let tableHtml = `
           <h3 class="text-lg font-semibold text-gray-700 mb-4">Danh sách người dùng</h3>
@@ -837,9 +914,10 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
             <tr class="hover:bg-blue-50 transition-colors duration-200 border-b border-gray-100">
               <td class="py-3 px-6 text-gray-700">${index + 1}</td>
               <td class="py-3 px-6">
-                ${user.avatar ? 
-                  `<img src="${user.avatar}" alt="Avatar" class="img-w-50 img-h-50 rounded-full object-cover" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPGNpcmNsZSBjeD0iMjAiIGN5PSIxNiIgcj0iNiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNOCAzMkM4IDI2LjQ3NzIgMTIuNDc3MiAyMiAxOCAyMkMyMy41MjI4IDIyIDI4IDI2LjQ3NzIgMjggMzIiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+Cg=='" />` : 
-                  `<div class="img-w-50 img-h-50 rounded-full bg-gray-200 flex items-center justify-center">
+                ${
+                  user.avatar
+                    ? `<img src="${user.avatar}" alt="Avatar" class="img-w-50 img-h-50 rounded-full object-cover" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiNGM0Y0RjYiLz4KPGNpcmNsZSBjeD0iMjAiIGN5PSIxNiIgcj0iNiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNOCAzMkM4IDI2LjQ3NzIgMTIuNDc3MiAyMiAxOCAyMkMyMy41MjI4IDIyIDI4IDI2LjQ3NzIgMjggMzIiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+Cg=='" />`
+                    : `<div class="img-w-50 img-h-50 rounded-full bg-gray-200 flex items-center justify-center">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <circle cx="12" cy="8" r="3" fill="#9CA3AF"/>
                       <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -847,13 +925,17 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                   </div>`
                 }
               </td>
-              <td class="py-3 px-6 text-gray-700 font-mono text-sm">${user.user_id}</td>
+              <td class="py-3 px-6 text-gray-700 font-mono text-sm">${
+                user.user_id
+              }</td>
               <td class="py-3 px-6 text-gray-700">${user.display_name}</td>
               <td class="py-3 px-6">
                 <input 
                   type="text" 
-                  value="${user.code || ''}" 
-                  onchange="window.updateUserCode('${user.user_id}', this.value)"
+                  value="${user.code || ""}" 
+                  onchange="window.updateUserCode('${
+                    user.user_id
+                  }', this.value)"
                   class="code-input"
                   placeholder="Nhập mã (khuyến mãi, tên, v.v.)"
                 />
@@ -977,44 +1059,36 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
       return false;
     }
 
-    // Get user data from users array
-    const currentUser = users.find(user => user.user_id === userId);
-    
+    const currentUser = users.find((user) => user.user_id === userId);
+
     let tableContentParsed: TableRow[] = [];
     if (enableTable) {
-      // Build table content dynamically from all table rows that have data
       tableContentParsed = [];
-      
+
       tableRows.forEach((row, index) => {
-        // Get user data for this row
         let value = "";
-        
+
         if (index === 0) {
-          // First row: check if using user name
           if (useUserName && currentUser?.display_name) {
             value = currentUser.display_name;
           } else {
             value = row.value || "";
           }
         } else if (index === 1) {
-          // Second row: check if using user code
           if (useUserCode && currentUser?.code && currentUser.code.trim()) {
             value = currentUser.code;
           } else {
             value = row.value || "";
           }
         } else {
-          // Additional rows: use manual input only
           value = row.value || "";
         }
-        
-        // Only add row if both key and value have content
+
         if (row.key.trim() && value.trim()) {
-          tableContentParsed.push({ key: row.key, value: value });
+          tableContentParsed.push({ key: row.key, value });
         }
       });
-      
-      // Check if we have at least one row with data
+
       if (tableContentParsed.length === 0) {
         setMessageResponse(
           '<h3 class="text-lg font-semibold text-red-600">Lỗi:</h3><pre class="bg-red-50 p-4 rounded-xl text-red-700 text-sm">Vui lòng nhập ít nhất một dòng có đầy đủ nhãn và giá trị trong bảng.</pre>'
@@ -1034,10 +1108,20 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
       setMessageResponse(
         (prev) =>
           prev +
-          `<pre class="bg-red-50 p-3 rounded-lg text-sm text-red-700 mb-2 overflow-x-auto">❌ Lỗi - ${userId}: Đã gửi tin nhắn trong 60 phút qua, vui lòng xóa lịch sử để gửi lại.</pre>`
+          `<pre class="bg-red-50 p-3 rounded-lg text-sm text-red-700 mb-2 overflow-x-auto">Lỗi - ${userId}: Đã gửi tin nhắn trong 60 phút qua, vui lòng xóa lịch sử để gửi lại.</pre>`
       );
       return false;
     }
+
+    /* ==================== XÁC ĐỊNH ENDPOINT & TEMPLATE ==================== */
+    const endpoint =
+      messageType === "promotion"
+        ? "https://openapi.zalo.me/v3.0/oa/message/promotion"
+        : "https://openapi.zalo.me/v3.0/oa/message/transaction";
+
+    const templateType =
+      messageType === "promotion" ? "promotion" : transactionTemplateType;
+    /* ===================================================================== */
 
     const payload = {
       recipient: { user_id: userId },
@@ -1045,7 +1129,7 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
         attachment: {
           type: "template",
           payload: {
-            template_type: "promotion",
+            template_type: templateType,
             elements: [
               { type: "banner", attachment_id: attachmentId },
               { type: "header", align: headerAlign, content: headerContent },
@@ -1058,22 +1142,27 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                 : []),
             ],
             buttons: [
-              ...(enableBookingButton ? [{
-                type: "oa.open.url",
-                title: bookingButtonTitle,
-                payload: {
-                  url: bookingButtonUrl,
-                },
-                image_icon: "",
-              }] : []),
-              ...(enableDetailButton && detailButtonUrl ? [{
-                type: "oa.open.url", 
-                title: detailButtonTitle,
-                payload: {
-                  url: detailButtonUrl,
-                },
-                image_icon: "https://truongvan.vn/wp-content/uploads/info.png",
-              }] : []),
+              ...(enableBookingButton
+                ? [
+                    {
+                      type: "oa.open.url",
+                      title: bookingButtonTitle,
+                      payload: { url: bookingButtonUrl },
+                      image_icon: "",
+                    },
+                  ]
+                : []),
+              ...(enableDetailButton && detailButtonUrl
+                ? [
+                    {
+                      type: "oa.open.url",
+                      title: detailButtonTitle,
+                      payload: { url: detailButtonUrl },
+                      image_icon:
+                        "https://truongvan.vn/wp-content/uploads/info.png",
+                    },
+                  ]
+                : []),
             ],
           },
         },
@@ -1081,17 +1170,14 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
     };
 
     try {
-      const response = await fetch(
-        "https://openapi.zalo.me/v3.0/oa/message/promotion",
-        {
-          method: "POST",
-          headers: {
-            access_token: accessToken,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          access_token: accessToken,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
       if (!response.ok) {
         throw new Error(
@@ -1107,22 +1193,22 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
             ...prev,
             { user_id: userId, timestamp: Date.now() },
           ]);
-          
-          // Save user to history when message sent successfully
-          const currentUser = users.find(user => user.user_id === userId);
+
+          const currentUser = users.find((user) => user.user_id === userId);
           if (currentUser) {
-            // Get the code that was actually used in the message
-            const codeUsed = tableContentParsed.find(row => row.key.includes("ưu đãi") || row.key.includes("code"))?.value || "";
-            
-            // If user doesn't have code, use manual input code for history
-            const finalCode = currentUser.code && currentUser.code.trim() 
-              ? currentUser.code 
-              : (codeUsed || tableRows[1]?.value || "");
-            
-            const historyUser = {
-              ...currentUser,
-              code: finalCode
-            };
+            const codeUsed =
+              tableContentParsed.find(
+                (row) =>
+                  row.key.toLowerCase().includes("ưu đãi") ||
+                  row.key.toLowerCase().includes("code")
+              )?.value || "";
+
+            const finalCode =
+              currentUser.code && currentUser.code.trim()
+                ? currentUser.code
+                : codeUsed || tableRows[1]?.value || "";
+
+            const historyUser = { ...currentUser, code: finalCode };
             saveUserToHistory(historyUser);
           }
         }
@@ -1131,7 +1217,9 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
         setMessageResponse(
           (prev) =>
             prev +
-            `<div class="bg-red-50 p-3 rounded-lg text-sm text-red-700 mb-2 border-l-4 border-red-500">❌ <strong>Lỗi - ${userId}</strong>: ${result.message || 'Không xác định'}</div>`
+            `<div class="bg-red-50 p-3 rounded-lg text-sm text-red-700 mb-2 border-l-4 border-red-500"><strong>Lỗi - ${userId}</strong>: ${
+              result.message || "Không xác định"
+            }</div>`
         );
         return false;
       }
@@ -1139,7 +1227,7 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
       setMessageResponse(
         (prev) =>
           prev +
-          `<pre class="bg-red-50 p-3 rounded-lg text-sm text-red-700 mb-2 overflow-x-auto">❌ Lỗi kết nối - ${userId}: ${error.message}</pre>`
+          `<pre class="bg-red-50 p-3 rounded-lg text-sm text-red-700 mb-2 overflow-x-auto">Lỗi kết nối - ${userId}: ${error.message}</pre>`
       );
       return false;
     }
@@ -1181,34 +1269,40 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
     for (const userId of userIds.slice(0, 50)) {
       const success = await sendMessageToUser(userId);
       processedCount++;
-      
+
       if (success) {
         successCount++;
         // Update progress for success
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const sentCount = document.getElementById('sent-count');
-        const successCountEl = document.getElementById('success-count');
-        const messageDetails = document.getElementById('message-details');
-        
-        if (progressBar && progressText && sentCount && successCountEl && messageDetails) {
+        const progressBar = document.getElementById("progress-bar");
+        const progressText = document.getElementById("progress-text");
+        const sentCount = document.getElementById("sent-count");
+        const successCountEl = document.getElementById("success-count");
+        const messageDetails = document.getElementById("message-details");
+
+        if (
+          progressBar &&
+          progressText &&
+          sentCount &&
+          successCountEl &&
+          messageDetails
+        ) {
           const percentage = Math.round((processedCount / totalUsers) * 100);
           progressBar.style.width = `${percentage}%`;
           progressText.textContent = `${percentage}%`;
           sentCount.textContent = processedCount.toString();
           successCountEl.textContent = successCount.toString();
-          
+
           messageDetails.innerHTML += `<div class="bg-green-50 p-2 rounded text-sm text-green-700 mb-1 border-l-4 border-green-500">✅ <strong>${userId}</strong>: Gửi thành công</div>`;
           messageDetails.scrollTop = messageDetails.scrollHeight;
         }
       } else {
         errorCount++;
         // Update progress for error
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const sentCount = document.getElementById('sent-count');
-        const errorCountEl = document.getElementById('error-count');
-        
+        const progressBar = document.getElementById("progress-bar");
+        const progressText = document.getElementById("progress-text");
+        const sentCount = document.getElementById("sent-count");
+        const errorCountEl = document.getElementById("error-count");
+
         if (progressBar && progressText && sentCount && errorCountEl) {
           const percentage = Math.round((processedCount / totalUsers) * 100);
           progressBar.style.width = `${percentage}%`;
@@ -1217,29 +1311,37 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
           errorCountEl.textContent = errorCount.toString();
         }
       }
-      
+
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     // Final summary
-    const progressBar = document.getElementById('progress-bar');
+    const progressBar = document.getElementById("progress-bar");
     if (progressBar) {
-      progressBar.classList.remove('from-blue-500', 'to-blue-600');
+      progressBar.classList.remove("from-blue-500", "to-blue-600");
       if (errorCount === 0) {
-        progressBar.classList.add('from-green-500', 'to-green-600');
+        progressBar.classList.add("from-green-500", "to-green-600");
       } else {
-        progressBar.classList.add('from-yellow-500', 'to-orange-600');
+        progressBar.classList.add("from-yellow-500", "to-orange-600");
       }
     }
 
     setMessageResponse(
       (prev) =>
         prev +
-        `<div class="mt-4 p-4 bg-gradient-to-r ${errorCount === 0 ? 'from-green-50 to-emerald-50 border-green-500' : 'from-yellow-50 to-orange-50 border-yellow-500'} rounded-lg border-l-4">
-          <h4 class="font-semibold ${errorCount === 0 ? 'text-green-700' : 'text-orange-700'} text-lg mb-2">
-            ${errorCount === 0 ? '🎉 Hoàn thành!' : '⚠️ Hoàn thành với lỗi'}
+        `<div class="mt-4 p-4 bg-gradient-to-r ${
+          errorCount === 0
+            ? "from-green-50 to-emerald-50 border-green-500"
+            : "from-yellow-50 to-orange-50 border-yellow-500"
+        } rounded-lg border-l-4">
+          <h4 class="font-semibold ${
+            errorCount === 0 ? "text-green-700" : "text-orange-700"
+          } text-lg mb-2">
+            ${errorCount === 0 ? "🎉 Hoàn thành!" : "⚠️ Hoàn thành với lỗi"}
           </h4>
-          <div class="flex gap-6 ${errorCount === 0 ? 'text-green-600' : 'text-orange-600'} font-medium">
+          <div class="flex gap-6 ${
+            errorCount === 0 ? "text-green-600" : "text-orange-600"
+          } font-medium">
             <span>✅ Thành công: <strong class="text-xl">${successCount}</strong></span>
             <span>❌ Lỗi: <strong class="text-xl">${errorCount}</strong></span>
             <span>📊 Tổng: <strong class="text-xl">${totalUsers}</strong></span>
@@ -1266,18 +1368,26 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
         </div>
       </div>
     `);
-    
+
     const success = await sendMessageToUser(userId, true);
-    
+
     setMessageResponse(`
-      <div class="p-4 ${success ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-500' : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-500'} rounded-lg border-l-4">
-        <h4 class="font-semibold ${success ? 'text-green-700' : 'text-red-700'} text-lg mb-2">
-          ${success ? '🎉 Gửi thành công!' : '❌ Gửi thất bại'}
+      <div class="p-4 ${
+        success
+          ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-500"
+          : "bg-gradient-to-r from-red-50 to-rose-50 border-red-500"
+      } rounded-lg border-l-4">
+        <h4 class="font-semibold ${
+          success ? "text-green-700" : "text-red-700"
+        } text-lg mb-2">
+          ${success ? "🎉 Gửi thành công!" : "❌ Gửi thất bại"}
         </h4>
-        <p class="${success ? 'text-green-600' : 'text-red-600'} font-medium">
-          ${success 
-            ? `Tin nhắn test đã được gửi đến <strong>${userId}</strong>` 
-            : 'Vui lòng kiểm tra lại thông tin và thử lại'}
+        <p class="${success ? "text-green-600" : "text-red-600"} font-medium">
+          ${
+            success
+              ? `Tin nhắn test đã được gửi đến <strong>${userId}</strong>`
+              : "Vui lòng kiểm tra lại thông tin và thử lại"
+          }
         </p>
       </div>
     `);
@@ -1317,7 +1427,9 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
       tableHtml += `
         <tr class="hover:bg-gray-50 transition-colors duration-200 border-b border-gray-100">
           <td class="py-3 px-6 text-gray-700">${index + 1}</td>
-          <td class="py-3 px-6 text-gray-700 font-mono text-sm">${entry.user_id}</td>
+          <td class="py-3 px-6 text-gray-700 font-mono text-sm">${
+            entry.user_id
+          }</td>
           <td class="py-3 px-6 text-gray-700">${date}</td>
         </tr>
       `;
@@ -1391,7 +1503,7 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
               <h2 className="text-xl font-semibold mb-4 text-center">
                 🔑 Cấu hình Access Token & User ID
               </h2>
-              
+
               <div className="mb-4">
                 <label className="block form-label mb-2">
                   Mã truy cập (Access Token)
@@ -1405,7 +1517,7 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                   style={{ width: "90%" }}
                 />
               </div>
-              
+
               <div className="mb-4">
                 <label className="block form-label mb-2">User ID của bạn</label>
                 <input
@@ -1417,7 +1529,7 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                   style={{ width: "90%" }}
                 />
               </div>
-              
+
               <div className="flex gap-4">
                 <button onClick={closeModal} className="btn-secondary flex-1">
                   Đóng
@@ -1469,16 +1581,47 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
             <div className="mb-6">
               <h2 className="section-header">Lấy danh sách người dùng</h2>
 
-              <div style={{marginBottom: '12px', padding: '12px', backgroundColor: '#e6f2ff', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #b3d9ff'}}>
-                <span style={{fontSize: '18px', color: '#6b7280', padding: '2px 6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center'}}>⚡</span>
-                <span style={{fontSize: '13px', color: '#0068FF', fontWeight: '500'}}>
-                  <strong>Ví dụ:</strong> Muốn tìm người thứ 51 đến 100 → nhập <strong>Offset: 51</strong>, <strong>Số lượng: 50</strong>
+              <div
+                style={{
+                  marginBottom: "12px",
+                  padding: "12px",
+                  backgroundColor: "#e6f2ff",
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  border: "1px solid #b3d9ff",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "18px",
+                    color: "#6b7280",
+                    padding: "2px 6px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  ⚡
+                </span>
+                <span
+                  style={{
+                    fontSize: "13px",
+                    color: "#0068FF",
+                    fontWeight: "500",
+                  }}
+                >
+                  <strong>Ví dụ:</strong> Muốn tìm người thứ 51 đến 100 → nhập{" "}
+                  <strong>Offset: 51</strong>, <strong>Số lượng: 50</strong>
                 </span>
               </div>
 
               <div className="flex items-end gap-6 mb-8 flex-nowrap overflow-auto">
                 <div className="flex-none">
-                  <label className="block form-label mb-3">Vị trí bắt đầu (Offset)</label>
+                  <label className="block form-label mb-3">
+                    Vị trí bắt đầu (Offset)
+                  </label>
                   <input
                     type="number"
                     value={offset}
@@ -1489,11 +1632,15 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                 </div>
 
                 <div className="flex-none">
-                  <label className="block form-label mb-3">Số lượng (Tối đa 50)</label>
+                  <label className="block form-label mb-3">
+                    Số lượng (Tối đa 50)
+                  </label>
                   <input
                     type="number"
                     value={count}
-                    onChange={(e) => setCount(Math.min(Number(e.target.value), 50))}
+                    onChange={(e) =>
+                      setCount(Math.min(Number(e.target.value), 50))
+                    }
                     min="1"
                     max="50"
                     className="input-field"
@@ -1501,7 +1648,9 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                 </div>
 
                 <div className="flex-none">
-                  <label className="block form-label mb-3">Thời gian tương tác cuối</label>
+                  <label className="block form-label mb-3">
+                    Thời gian tương tác cuối
+                  </label>
                   <select
                     value={lastInteraction}
                     onChange={(e) => setLastInteraction(e.target.value)}
@@ -1516,7 +1665,9 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                 </div>
 
                 <div className="flex-none">
-                  <label className="block form-label mb-3">Là người theo dõi</label>
+                  <label className="block form-label mb-3">
+                    Là người theo dõi
+                  </label>
                   <select
                     value={isFollower}
                     onChange={(e) => setIsFollower(e.target.value)}
@@ -1557,7 +1708,11 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                   onClick={exportUsers}
                   className="btn-secondary"
                   disabled={users.length === 0}
-                  title={users.length === 0 ? "Không có dữ liệu để xuất" : "Xuất danh sách ra file Excel"}
+                  title={
+                    users.length === 0
+                      ? "Không có dữ liệu để xuất"
+                      : "Xuất danh sách ra file Excel"
+                  }
                 >
                   � Xuất Excel
                 </button>
@@ -1577,15 +1732,20 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                 <h4>Định dạng file Excel</h4>
                 <ul className="excel-info-list">
                   <li>
-                    <strong>Xuất:</strong> File <span className="excel-format-highlight">.xlsx</span> với các cột: 
-                    STT, User ID, Tên hiển thị, Code
+                    <strong>Xuất:</strong> File{" "}
+                    <span className="excel-format-highlight">.xlsx</span> với
+                    các cột: STT, User ID, Tên hiển thị, Code
                   </li>
                   <li>
-                    <strong>Nhập:</strong> Chấp nhận file <span className="excel-format-highlight">.xlsx</span>, 
-                    <span className="excel-format-highlight">.xls</span>, <span className="excel-format-highlight">.csv</span> với cột bắt buộc là 'User ID'
+                    <strong>Nhập:</strong> Chấp nhận file{" "}
+                    <span className="excel-format-highlight">.xlsx</span>,
+                    <span className="excel-format-highlight">.xls</span>,{" "}
+                    <span className="excel-format-highlight">.csv</span> với cột
+                    bắt buộc là 'User ID'
                   </li>
                   <li>
-                    <strong>Lưu ý:</strong> File nhập sẽ thay thế hoàn toàn danh sách hiện tại
+                    <strong>Lưu ý:</strong> File nhập sẽ thay thế hoàn toàn danh
+                    sách hiện tại
                   </li>
                 </ul>
               </div>
@@ -1624,12 +1784,16 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                   <div className="upload-icon">📁</div>
                   <div className="drop-text">
                     <div>Kéo và thả ảnh vào đây</div>
-                    <div className="drop-text-secondary">hoặc nhấn để chọn từ máy tính</div>
+                    <div className="drop-text-secondary">
+                      hoặc nhấn để chọn từ máy tính
+                    </div>
                   </div>
                 </div>
                 {previewImage && (
                   <div className="mt-4">
-                    <h3 className="text-lg font-semibold mb-2">Xem trước ảnh</h3>
+                    <h3 className="text-lg font-semibold mb-2">
+                      Xem trước ảnh
+                    </h3>
                     <img
                       src={previewImage}
                       alt="Preview"
@@ -1639,25 +1803,36 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                   </div>
                 )}
               </div>
-              
+
               {/* Attachment History Section */}
               {attachmentHistory.length > 0 && (
                 <div className="attachment-history-section">
-                  <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                    <h3 className="attachment-history-title" style={{margin: 0}}>📋 Lịch sử ID ảnh (3 gần nhất)</h3>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <h3
+                      className="attachment-history-title"
+                      style={{ margin: 0 }}
+                    >
+                      📋 Lịch sử ID ảnh (3 gần nhất)
+                    </h3>
                     <button
                       type="button"
                       onClick={() => setShowAttachmentTip(!showAttachmentTip)}
                       style={{
-                        background: 'none',
-                        border: '1.5px solid #d1d5db',
-                        borderRadius: '50%',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        padding: '2px 6px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        color: '#6b7280',
+                        background: "none",
+                        border: "1.5px solid #d1d5db",
+                        borderRadius: "50%",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        padding: "2px 6px",
+                        display: "flex",
+                        alignItems: "center",
+                        color: "#6b7280",
                       }}
                       title="Xem gợi ý"
                     >
@@ -1665,15 +1840,21 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                     </button>
                   </div>
                   {showAttachmentTip && (
-                    <div className="attachment-history-note" style={{marginTop: '8px', marginBottom: '8px'}}>
-                      Click "Sử dụng" để copy ID và áp dụng vào form gửi tin nhắn
+                    <div
+                      className="attachment-history-note"
+                      style={{ marginTop: "8px", marginBottom: "8px" }}
+                    >
+                      Click "Sử dụng" để copy ID và áp dụng vào form gửi tin
+                      nhắn
                     </div>
                   )}
                   <div className="attachment-history-list">
                     {attachmentHistory.map((id, index) => (
                       <div key={id} className="attachment-history-item">
                         <div className="attachment-history-content">
-                          <span className="attachment-history-index">#{index + 1}</span>
+                          <span className="attachment-history-index">
+                            #{index + 1}
+                          </span>
                           <span className="attachment-history-id">{id}</span>
                           <button
                             onClick={() => {
@@ -1687,7 +1868,9 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                           </button>
                         </div>
                         {index === 0 && (
-                          <span className="attachment-history-latest">Mới nhất</span>
+                          <span className="attachment-history-latest">
+                            Mới nhất
+                          </span>
                         )}
                       </div>
                     ))}
@@ -1705,12 +1888,79 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
           )}
           {/* Send Message Tab */}
           {activeTab === "sendMessage" && (
-            <div>
+            <div className="space-y-6">
               <h2 className="section-header">Gửi tin nhắn cho khách hàng</h2>
 
+              {/* === CHỌN LOẠI TIN NHẮN === */}
+              <div className="mb-8">
+                <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={messageType === "transaction"}
+                        onChange={(e) =>
+                          setMessageType(
+                            e.target.checked ? "transaction" : "promotion"
+                          )
+                        }
+                        className="peer"
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span className="font-semibold text-blue-800">
+                      Tin nhắn giao dịch gửi cho khách hàng chưa quan tâm
+                    </span>
+                  </div>
+
+                  {/* Dropdown loại giao dịch */}
+                  {messageType === "transaction" && (
+                    <div className="ml-12 mt-4 p-4 bg-white/70 rounded-lg shadow-sm">
+                      <label className="block text-sm font-medium text-blue-700 mb-2">
+                        Chọn loại giao dịch:
+                      </label>
+
+                      {/* Dropdown dùng class CSS có sẵn */}
+                      <div className="custom-select-wrapper">
+                        <select
+                          value={transactionTemplateType}
+                          onChange={(e) =>
+                            setTransactionTemplateType(e.target.value)
+                          }
+                          className="custom-select"
+                        >
+                          {TRANSACTION_TYPES.map((type) => (
+                            <option key={type.value} value={type.value}>
+                              {type.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <p className="mt-2 text-xs text-gray-600">
+                        Gửi tin <strong>giao dịch</strong> cho người{" "}
+                        <strong>chưa quan tâm</strong> OA
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Gợi ý khi tắt */}
+                  {messageType === "promotion" && (
+                    <div className="ml-12 mt-4 p-4 bg-emerald-50 rounded-lg">
+                      <p className="text-sm text-emerald-700">
+                        <strong>Truyền thông (Promotion)</strong>: Chỉ gửi được
+                        cho người <strong>đã quan tâm</strong> OA
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* === FORM GỬI TIN === */}
               <div className="message-form-container">
+                {/* Attachment ID */}
                 <div className="form-group">
-                  <label className="block form-label">
+                  <label className="form-label">
                     ID đính kèm (từ Tải ảnh lên)
                   </label>
                   <input
@@ -1722,20 +1972,22 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                   />
                 </div>
 
+                {/* Header */}
                 <div className="form-group">
-                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'}}>
-                    <label className="block form-label" style={{marginBottom: 0}}>
-                      Nội dung tiêu đề
-                    </label>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="form-label">Nội dung tiêu đề</label>
                     <select
                       value={headerAlign}
-                      onChange={(e) => setHeaderAlign(e.target.value as "left" | "center" | "right")}
+                      onChange={(e) =>
+                        setHeaderAlign(
+                          e.target.value as "left" | "center" | "right"
+                        )
+                      }
                       className="input-field compact w-150"
-                      style={{ padding: '4px 8px', fontSize: '13px'}}
                     >
-                      <option value="left">⬅️ Căn trái</option>
-                      <option value="center">↔️ Căn giữa</option>
-                      <option value="right">➡️ Căn phải</option>
+                      <option value="left">Căn trái</option>
+                      <option value="center">Căn giữa</option>
+                      <option value="right">Căn phải</option>
                     </select>
                   </div>
                   <input
@@ -1746,162 +1998,211 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                   />
                 </div>
 
+                {/* Message Content */}
                 <div className="form-group">
-                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', gap: '8px', flexWrap: 'wrap'}}>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                      <label className="block form-label" style={{marginBottom: 0}}>
-                        Nội dung tin nhắn
-                      </label>
+                  <div className="flex justify-between items-center mb-2 gap-3 flex-wrap">
+                    <div className="flex items-center gap-3">
+                      <label className="form-label">Nội dung tin nhắn</label>
                       <button
                         type="button"
                         disabled={isFormatting}
                         onClick={async () => {
                           if (isMessageFormatted) {
-                            // Restore original content instantly
                             setMessageContent(originalMessageContent);
                             setIsMessageFormatted(false);
                           } else {
-                            // Start formatting with loading and typing effect
                             setIsFormatting(true);
                             setOriginalMessageContent(messageContent);
-                            
                             let formatted = messageContent;
-                          
-                            // Step 1: Convert leading spaces to &nbsp;
-                            const lines = formatted.split('\n');
-                            formatted = lines.map(line => {
-                              const leadingSpaces = line.match(/^( +)/);
-                              if (leadingSpaces) {
-                                const spaceCount = leadingSpaces[0].length;
-                                const nbspString = '&nbsp;'.repeat(spaceCount);
-                                return nbspString + line.substring(spaceCount);
-                              }
-                              return line;
-                            }).join('\n');
-                            
-                            // Step 2: Convert double line breaks to <br><br>
-                            formatted = formatted.replace(/\n\n/g, '<br><br>');
-                            
-                            // Step 3: Convert single line breaks to <br>
-                            formatted = formatted.replace(/\n/g, '<br>');
-                            
-                            // Step 4: Handle special case for "- " after <br>
-                            formatted = formatted.replace(/<br>- /g, '<br>&nbsp;&nbsp;- ');
-                            
-                            // Step 5: Handle special case for "- " at start
-                            if (formatted.startsWith('- ')) {
-                              formatted = '&nbsp;&nbsp;' + formatted;
-                            }
-                            
-                            // Typing effect - type character by character
-                            setMessageContent('');
-                            const typingSpeed = 15; // milliseconds per character
-                            
+
+                            const lines = formatted.split("\n");
+                            formatted = lines
+                              .map((line) => {
+                                const leadingSpaces = line.match(/^( +)/);
+                                if (leadingSpaces) {
+                                  const spaceCount = leadingSpaces[0].length;
+                                  return (
+                                    "&nbsp;".repeat(spaceCount) +
+                                    line.substring(spaceCount)
+                                  );
+                                }
+                                return line;
+                              })
+                              .join("\n");
+
+                            formatted = formatted.replace(/\n\n/g, "<br><br>");
+                            formatted = formatted.replace(/\n/g, "<br>");
+                            formatted = formatted.replace(
+                              /<br>- /g,
+                              "<br>&nbsp;&nbsp;- "
+                            );
+                            if (formatted.startsWith("- "))
+                              formatted = "&nbsp;&nbsp;" + formatted;
+
+                            setMessageContent("");
+                            const typingSpeed = 15;
                             for (let i = 0; i <= formatted.length; i++) {
-                              await new Promise(resolve => setTimeout(resolve, typingSpeed));
+                              await new Promise((r) =>
+                                setTimeout(r, typingSpeed)
+                              );
                               setMessageContent(formatted.substring(0, i));
                             }
-                            
                             setIsFormatting(false);
                             setIsMessageFormatted(true);
                           }
                         }}
-                        className={`compact-button ${isFormatting ? '' : isMessageFormatted ? 'auto-format-btn-active' : 'auto-format-btn'}`}
+                        className={`compact-button auto-format-btn ${
+                          isMessageFormatted ? "auto-format-btn-active" : ""
+                        }`}
                         style={{
-                          fontSize: '11px', 
-                          padding: '6px 12px', 
+                          marginLeft: "20px",
+                          fontSize: "11px",
+                          padding: "6px 12px",
                           background: isFormatting
-                            ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
-                            : isMessageFormatted 
-                              ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
-                              : 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)', 
-                          color: 'white', 
-                          border: 'none',
-                          borderRadius: '10px',
+                            ? "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)"
+                            : isMessageFormatted
+                            ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
+                            : "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "10px",
                           boxShadow: isFormatting
-                            ? '0 4px 15px rgba(99, 102, 241, 0.4), 0 0 20px rgba(99, 102, 241, 0.3)'
-                            : isMessageFormatted 
-                              ? '0 4px 15px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.2)'
-                              : '0 4px 15px rgba(245, 158, 11, 0.3), 0 0 20px rgba(245, 158, 11, 0.2)',
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          cursor: isFormatting ? 'wait' : 'pointer',
+                            ? "0 4px 15px rgba(99, 102, 241, 0.4), 0 0 20px rgba(99, 102, 241, 0.3)"
+                            : isMessageFormatted
+                            ? "0 4px 15px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.2)"
+                            : "0 4px 15px rgba(245, 158, 11, 0.3), 0 0 20px rgba(245, 158, 11, 0.2)",
+                          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                          cursor: isFormatting ? "wait" : "pointer",
                           opacity: isFormatting ? 0.9 : 1,
-                          fontWeight: '600',
-                          letterSpacing: '0.3px',
-                          textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                          fontWeight: "600",
+                          letterSpacing: "0.3px",
+                          textShadow: "0 1px 2px rgba(0, 0, 0, 0.2)",
                         }}
                         onMouseEnter={(e) => {
                           if (!isFormatting) {
-                            e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+                            e.currentTarget.style.transform =
+                              "translateY(-3px) scale(1.05)";
                             e.currentTarget.style.boxShadow = isMessageFormatted
-                              ? '0 8px 25px rgba(16, 185, 129, 0.4), 0 0 30px rgba(16, 185, 129, 0.3)'
-                              : '0 8px 25px rgba(245, 158, 11, 0.4), 0 0 30px rgba(245, 158, 11, 0.3)';
+                              ? "0 8px 25px rgba(16, 185, 129, 0.4), 0 0 30px rgba(16, 185, 129, 0.3)"
+                              : "0 8px 25px rgba(245, 158, 11, 0.4), 0 0 30px rgba(245, 158, 11, 0.3)";
                           }
                         }}
                         onMouseLeave={(e) => {
                           if (!isFormatting) {
-                            e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                            e.currentTarget.style.transform =
+                              "translateY(0) scale(1)";
                             e.currentTarget.style.boxShadow = isMessageFormatted
-                              ? '0 4px 15px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.2)'
-                              : '0 4px 15px rgba(245, 158, 11, 0.3), 0 0 20px rgba(245, 158, 11, 0.2)';
+                              ? "0 4px 15px rgba(16, 185, 129, 0.3), 0 0 20px rgba(16, 185, 129, 0.2)"
+                              : "0 4px 15px rgba(245, 158, 11, 0.3), 0 0 20px rgba(245, 158, 11, 0.2)";
                           }
                         }}
-                        title={isFormatting 
-                          ? "Đang định dạng..." 
-                          : isMessageFormatted 
-                            ? "Nhấn để quay về văn bản gốc" 
-                            : "Tự động chuyển đổi văn bản thường thành format với <br> và &nbsp; (có thể sai 😅)"}
+                        title={
+                          isFormatting
+                            ? "Đang định dạng..."
+                            : isMessageFormatted
+                            ? "Nhấn để quay về văn bản gốc"
+                            : "Tự động chuyển đổi văn bản thường thành format với <br> và &nbsp;"
+                        }
                       >
                         {isFormatting ? (
-                          <span style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
-                            <span className="spinner" style={{
-                              width: '12px',
-                              height: '12px',
-                              border: '2px solid rgba(255, 255, 255, 0.3)',
-                              borderTop: '2px solid white',
-                              borderRadius: '50%',
-                              animation: 'spin 0.6s linear infinite',
-                            }}></span>
-                            Đang định dạng...
+                          <span className="flex items-center gap-2">
+                            <span
+                              className="spinner"
+                              style={{
+                                width: "12px",
+                                height: "12px",
+                                border: "2px solid rgba(255, 255, 255, 0.3)",
+                                borderTop: "2px solid white",
+                                borderRadius: "50%",
+                                animation: "spin 0.6s linear infinite",
+                              }}
+                            ></span>
+                            &nbsp;Đang định dạng...
                           </span>
-                        ) : isMessageFormatted ? '↻ Hoàn tác' : '✨ Tự động định dạng pro ⇾ có thể sai :)))'}
+                        ) : isMessageFormatted ? (
+                          " Hoàn tác"
+                        ) : (
+                          " ✨Tự động định dạng pro ⇨ có thể sai :))"
+                        )}
                       </button>
                     </div>
                     <select
                       value={messageAlign}
-                      onChange={(e) => setMessageAlign(e.target.value as "left" | "center" | "right")}
+                      onChange={(e) =>
+                        setMessageAlign(
+                          e.target.value as "left" | "center" | "right"
+                        )
+                      }
                       className="input-field compact w-200"
-                      style={{ padding: '4px 8px', fontSize: '13px'}}
                       title="Zalo OA không hỗ trợ căn đều (justify)"
                     >
-                      <option value="left">⬅️ Căn trái (Khuyến nghị)</option>
-                      <option value="center">↔️ Căn giữa</option>
-                      <option value="right">➡️ Căn phải</option>
+                      <option value="left">Căn trái (Khuyến nghị)</option>
+                      <option value="center">Căn giữa</option>
+                      <option value="right">Căn phải</option>
                     </select>
                   </div>
+
                   <textarea
                     id="messageContentTextarea"
                     value={messageContent}
                     onChange={(e) => {
-                      setMessageContent(e.target.value);
-                      // Reset format state if user manually edits after formatting
-                      if (isMessageFormatted) {
-                        setIsMessageFormatted(false);
+                      const value = e.target.value;
+                      const maxLength =
+                        messageType === "transaction" ? 250 : 2000;
+
+                      // Cắt nếu vượt quá
+                      if (value.length > maxLength) {
+                        setMessageContent(value.slice(0, maxLength));
+                      } else {
+                        setMessageContent(value);
                       }
+                      if (isMessageFormatted) setIsMessageFormatted(false);
                     }}
                     rows={3}
                     className="input-field compact resize-vertical"
+                    placeholder={`Nhập nội dung (tối đa ${
+                      messageType === "transaction" ? 250 : 2000
+                    } ký tự)`}
                   />
-                  <div style={{marginTop: '6px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center'}}>
+
+                  {/* Đếm ký tự - đỏ khi vượt */}
+                  <div className="text-sm text-right mt-1">
+                    <span
+                      className={
+                        messageContent.length >
+                        (messageType === "transaction" ? 250 : 2000)
+                          ? "text-red-600 font-semibold"
+                          : "text-gray-500"
+                      }
+                    >
+                      {messageContent.length} /{" "}
+                      {messageType === "transaction" ? 250 : 2000}
+                    </span>
+                  </div>
+                  {messageType === "transaction" && (
+                    <div className="text-right mt-1">
+                      <span style={{ color: "#dc2626", fontSize: "12px", fontWeight: 600 }}>
+                        ⚠️ Lưu ý: Tin nhắn giao dịch tối đa 250 ký tự
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Nút chèn <br>, thụt dòng */}
+                  <div className="flex gap-2 mt-3 flex-wrap items-center">
                     <button
                       type="button"
                       onClick={() => {
-                        const textarea = document.getElementById('messageContentTextarea') as HTMLTextAreaElement;
+                        const textarea = document.getElementById(
+                          "messageContentTextarea"
+                        ) as HTMLTextAreaElement;
                         if (textarea) {
                           const start = textarea.selectionStart;
                           const end = textarea.selectionEnd;
                           const text = messageContent;
-                          const newText = text.substring(0, start) + '<br>' + text.substring(end);
+                          const newText =
+                            text.substring(0, start) +
+                            "<br>" +
+                            text.substring(end);
                           setMessageContent(newText);
                           if (isMessageFormatted) setIsMessageFormatted(false);
                           setTimeout(() => {
@@ -1911,21 +2212,26 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                         }
                       }}
                       className="compact-button"
-                      style={{fontSize: '12px', padding: '4px 10px'}}
+                      style={{ fontSize: "12px", padding: "4px 10px" }}
                       title="Chèn thẻ <br> để xuống dòng"
                     >
-                      ↵ Xuống dòng
+                      Xuống dòng
                     </button>
-                    
+
                     <button
                       type="button"
                       onClick={() => {
-                        const textarea = document.getElementById('messageContentTextarea') as HTMLTextAreaElement;
+                        const textarea = document.getElementById(
+                          "messageContentTextarea"
+                        ) as HTMLTextAreaElement;
                         if (textarea) {
                           const start = textarea.selectionStart;
                           const end = textarea.selectionEnd;
                           const text = messageContent;
-                          const newText = text.substring(0, start) + '&nbsp;&nbsp;' + text.substring(end);
+                          const newText =
+                            text.substring(0, start) +
+                            "&nbsp;&nbsp;" +
+                            text.substring(end);
                           setMessageContent(newText);
                           if (isMessageFormatted) setIsMessageFormatted(false);
                           setTimeout(() => {
@@ -1935,21 +2241,26 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                         }
                       }}
                       className="compact-button"
-                      style={{fontSize: '12px', padding: '4px 10px'}}
-                      title="Thụt đầu dòng 2 spaces (dùng cho sub-item)"
+                      style={{ fontSize: "12px", padding: "4px 10px" }}
+                      title="Thụt đầu dòng 2 spaces"
                     >
-                      ⇥ Thụt 2
+                      Thụt 2
                     </button>
-                    
+
                     <button
                       type="button"
                       onClick={() => {
-                        const textarea = document.getElementById('messageContentTextarea') as HTMLTextAreaElement;
+                        const textarea = document.getElementById(
+                          "messageContentTextarea"
+                        ) as HTMLTextAreaElement;
                         if (textarea) {
                           const start = textarea.selectionStart;
                           const end = textarea.selectionEnd;
                           const text = messageContent;
-                          const newText = text.substring(0, start) + '&nbsp;&nbsp;&nbsp;&nbsp;' + text.substring(end);
+                          const newText =
+                            text.substring(0, start) +
+                            "&nbsp;&nbsp;&nbsp;&nbsp;" +
+                            text.substring(end);
                           setMessageContent(newText);
                           if (isMessageFormatted) setIsMessageFormatted(false);
                           setTimeout(() => {
@@ -1959,22 +2270,28 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                         }
                       }}
                       className="compact-button"
-                      style={{fontSize: '12px', padding: '4px 10px'}}
-                      title="Thụt đầu dòng 4 spaces (dùng cho nested item)"
+                      style={{ fontSize: "12px", padding: "4px 10px" }}
+                      title="Thụt đầu dòng 4 spaces"
                     >
-                      ⇥ Thụt 4
+                      Thụt 4
                     </button>
-                    
-                    <div style={{height: '20px', width: '1px', background: '#d1d5db'}}></div>
-                    
 
-                      <span style={{fontSize: '11px', color: '#6b7280'}}>
-                        <code style={{background: '#f3f4f6', padding: '2px 4px', borderRadius: '3px', fontSize: '10px'}}>&lt;br&gt;</code> xuống dòng | 
-                        <code style={{background: '#f3f4f6', padding: '2px 4px', borderRadius: '3px', fontSize: '10px', marginLeft: '4px'}}>&amp;nbsp;</code> thụt đầu dòng
-                      </span>
+                    <div className="h-5 w-px bg-gray-300 mx-1"></div>
+
+                    <span className="text-xs text-gray-500">
+                      <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">
+                        &lt;br&gt;
+                      </code>{" "}
+                      xuống dòng |
+                      <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs ml-1">
+                        &amp;nbsp;
+                      </code>{" "}
+                      thụt dòng
+                    </span>
                   </div>
                 </div>
 
+                {/* === BẢNG DỮ LIỆU === */}
                 <div className="form-group table-section">
                   <div className="button-toggle">
                     <label className="toggle-switch">
@@ -1986,173 +2303,183 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                       <span className="toggle-slider"></span>
                     </label>
                     <span className="toggle-label">
-                      📋 Bật nội dung bảng {enableTable ? '(Bật)' : '(Tắt)'}
+                      Bật nội dung bảng {enableTable ? "(Bật)" : "(Tắt)"}
                     </span>
-                        <button
+                    <button
                       type="button"
                       onClick={() => setShowTableInfoTip(!showTableInfoTip)}
-                      style={{
-                        background: 'none',
-                        border: '1.5px solid #d1d5db',
-                        borderRadius: '50%',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        padding: '2px 6px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        color: '#6b7280',
-                      }}
+                      className="ml-2 w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs"
                       title="Xem thông tin bảng tự động"
                     >
                       ❔
                     </button>
                   </div>
-                  
+
                   {showTableInfoTip && (
-                    <div style={{marginTop: '8px'}}>
-                      <div className="table-info-compact" style={{marginTop: 0}}>
-                        <h4 className="table-info-title">📋 Thông tin bảng tự động:</h4>
-                        <div className="table-info-grid">
-                          <div><strong>Nhãn:</strong> Từ ô bên dưới</div>
-                          <div><strong>Dòng 1:</strong> {useUserName ? 'Tên user, nếu không có -> lấy dự phòng bên dưới' : 'Chỉ dự phòng bên dưới'}</div>
-                          <div><strong>Dòng 2:</strong> {useUserCode ? 'Code user, nếu không có -> lấy dự phòng bên dưới' : 'Chỉ dự phòng bên dưới'}</div>
-                          <div><strong>Hiển thị:</strong> Dòng có dữ liệu</div>
+                    <div className="mt-3 table-info-compact">
+                      <h4 className="table-info-title">
+                        Thông tin bảng tự động:
+                      </h4>
+                      <div className="table-info-grid">
+                        <div>
+                          <strong>Nhãn:</strong> Từ ô bên dưới
+                        </div>
+                        <div>
+                          <strong>Dòng 1:</strong>{" "}
+                          {useUserName ? "Tên user" : "Chỉ dự phòng"}
+                        </div>
+                        <div>
+                          <strong>Dòng 2:</strong>{" "}
+                          {useUserCode ? "Code user" : "Chỉ dự phòng"}
+                        </div>
+                        <div>
+                          <strong>Hiển thị:</strong> Dòng có dữ liệu
                         </div>
                       </div>
-
-                      <div className="smart-table-tip-compact" style={{marginTop: '8px'}}>
-                        <span className="tip-icon">⚡</span>
-                        <strong>Ví dụ:</strong> Không có code <span className="tip-arrow">→</span> dùng ô "Giá trị" thủ công
+                      <div className="mt-3 smart-table-tip-compact">
+                        <span className="tip-icon">Lightning</span>
+                        <strong>Ví dụ:</strong> Không có code{" "}
+                        <span className="tip-arrow">→</span> dùng ô "Giá trị"
+                        thủ công
                       </div>
                     </div>
                   )}
 
                   {enableTable && (
-                    <div className="table-data-source">
-                      <h5>
-                        🎯 Nguồn dữ liệu cho từng dòng:
-                      </h5>
-                      <div className="checkbox-options">
-                        <label className="custom-checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={useUserName}
-                            onChange={(e) => setUseUserName(e.target.checked)}
-                            className="custom-checkbox"
-                          />
-                          <span className="checkbox-label-text">🏷️ Dòng 1: Lấy từ <strong>Tên user</strong></span>
-                        </label>
-                        <label className="custom-checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={useUserCode}
-                            onChange={(e) => setUseUserCode(e.target.checked)}
-                            className="custom-checkbox"
-                          />
-                          <span className="checkbox-label-text">🔑 Dòng 2: Lấy từ <strong>Code user</strong></span>
-                        </label>
+                    <>
+                      <div className="table-data-source">
+                        <h5>🎯 Nguồn dữ liệu cho từng dòng:</h5>
+                        <div className="checkbox-options">
+                          <label className="custom-checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={useUserName}
+                              onChange={(e) => setUseUserName(e.target.checked)}
+                              className="custom-checkbox"
+                            />
+                            <span className="checkbox-label-text">
+                              Dòng 1: Lấy từ <strong>Tên user</strong>
+                            </span>
+                          </label>
+                          <label className="custom-checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={useUserCode}
+                              onChange={(e) => setUseUserCode(e.target.checked)}
+                              className="custom-checkbox"
+                            />
+                            <span className="checkbox-label-text">
+                              Dòng 2: Lấy từ <strong>Code user</strong>
+                            </span>
+                          </label>
+                        </div>
+                        <div className="checkbox-hint mt-2">
+                          Không check = dùng giá trị thủ công bên dưới
+                        </div>
                       </div>
-                      <div style={{marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px'}}>
 
-                          <div className="checkbox-hint" style={{margin: 0}}>
-                            Không check = dùng giá trị thủ công bên dưới
-                          </div>
-
+                      <div className="table-config">
+                        <div className="flex justify-between items-center mb-3">
+                          <p className="table-config-label">
+                            Tùy chỉnh nhãn và dữ liệu dự phòng:
+                          </p>
+                          <button
+                            type="button"
+                            onClick={addTableRow}
+                            disabled={!enableTable || tableRows.length >= 2}
+                            className="btn-compact btn-secondary-compact"
+                            title="Thêm dòng mới"
+                          >
+                            + Thêm dòng
+                          </button>
+                        </div>
+                        <div className="table-rows-grid">
+                          {tableRows.map((row, index) => (
+                            <div key={index} className="table-row-inputs">
+                              <input
+                                type="text"
+                                value={row.key}
+                                onChange={(e) =>
+                                  handleTableRowChange(
+                                    index,
+                                    "key",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Nhãn"
+                                className="input-field compact table-input"
+                                style={{ width: "90%" }}
+                                disabled={!enableTable}
+                              />
+                              <input
+                                type="text"
+                                value={row.value}
+                                onChange={(e) =>
+                                  handleTableRowChange(
+                                    index,
+                                    "value",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Giá trị"
+                                className="input-field compact table-input"
+                                style={{ width: "90%" }}
+                                disabled={!enableTable}
+                              />
+                              {tableRows.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeTableRow(index)}
+                                  disabled={!enableTable}
+                                  className="btn-compact"
+                                  style={{
+                                    position: "absolute",
+                                    right: "-35px",
+                                    top: "40%",
+                                    transform: "translateY(-50%)",
+                                    padding: "4px 8px",
+                                    fontSize: "12px",
+                                  }}
+                                  title="Xóa dòng này"
+                                >
+                                  ❌
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-2 text-xs text-gray-500">
+                          Số dòng: {tableRows.length}/2 | Tối thiểu 1 dòng, tối
+                          đa 2 dòng
+                        </div>
                       </div>
-                    </div>
+                    </>
                   )}
-
-                  <div className="table-config">
-                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
-                      <p className="table-config-label">Tùy chỉnh nhãn và dữ liệu dự phòng:</p>
-                      <div style={{display: 'flex', gap: '8px'}}>
-                        <button
-                          type="button"
-                          onClick={addTableRow}
-                          disabled={!enableTable || tableRows.length >= 2}
-                          className="btn-compact btn-secondary-compact"
-                          title="Thêm dòng mới"
-                        >
-                          ➕ Thêm dòng
-                        </button>
-                      </div>
-                    </div>
-                    <div className="table-rows-grid">
-                      {tableRows.map((row, index) => (
-                        <div key={index} className="table-row-inputs" style={{position: 'relative'}}>
-                          <input
-                            type="text"
-                            value={row.key}
-                            onChange={(e) =>
-                              handleTableRowChange(index, "key", e.target.value)
-                            }
-                            placeholder="Nhãn"
-                            className="input-field compact table-input"
-                            style={{width: "90%"}}
-                            disabled={!enableTable}
-                          />
-                          <input
-                            type="text"
-                            value={row.value}
-                            onChange={(e) =>
-                              handleTableRowChange(index, "value", e.target.value)
-                            }
-                            placeholder="Giá trị"
-                             style={{width: "90%"}}
-                            className="input-field compact table-input"
-                            disabled={!enableTable}
-                          />
-                          {tableRows.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => removeTableRow(index)}
-                              disabled={!enableTable}
-                              className="btn-compact"
-                              style={{
-                                position: 'absolute',
-                                right: '-35px',
-                                top: '40%',
-                                transform: 'translateY(-50%)',
-                                padding: '4px 8px',
-                                fontSize: '12px'
-                              }}
-                              title="Xóa dòng này"
-                            >
-                              ❌
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px'}}>
-                      <span style={{fontSize: '12px', color: '#6b7280'}}>📊 Số dòng:</span>
-
-                        <div style={{fontSize: '12px', color: '#6b7280'}}>
-                          Dòng {tableRows.length}/2 | Tối thiểu 1 dòng, tối đa 2 dòng
-                        </div>
-                    </div>
-                  </div>
                 </div>
 
+                {/* === NÚT HÀNH ĐỘNG === */}
                 <div className="form-group buttons-section">
-                  <h3 className="buttons-section-title">🔗 Cấu hình nút hành động</h3>
-                  
-                  {/* Booking Button Section */}
+                  <h3 className="buttons-section-title">
+                    Cấu hình nút hành động
+                  </h3>
+
+                  {/* Booking Button */}
                   <div className="button-config-item">
                     <div className="button-toggle">
                       <label className="toggle-switch">
                         <input
                           type="checkbox"
                           checked={enableBookingButton}
-                          onChange={(e) => setEnableBookingButton(e.target.checked)}
+                          onChange={(e) =>
+                            setEnableBookingButton(e.target.checked)
+                          }
                         />
                         <span className="toggle-slider"></span>
                       </label>
                       <span className="toggle-label">
-                        📅 Nút đặt phòng {enableBookingButton ? '(Bật)' : '(Tắt)'}
+                        Nút đặt phòng {enableBookingButton ? "(Bật)" : "(Tắt)"}
                       </span>
                     </div>
-                    
                     {enableBookingButton && (
                       <div className="button-inputs">
                         <div className="button-input-group">
@@ -2160,10 +2487,12 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                           <input
                             type="text"
                             value={bookingButtonTitle}
-                            onChange={(e) => setBookingButtonTitle(e.target.value)}
+                            onChange={(e) =>
+                              setBookingButtonTitle(e.target.value)
+                            }
                             className="input-field compact"
                             placeholder="Đặt phòng ngay"
-                            style={{width: "90%"}}
+                            style={{ width: "90%" }}
                           />
                         </div>
                         <div className="button-input-group">
@@ -2171,9 +2500,11 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                           <input
                             type="url"
                             value={bookingButtonUrl}
-                            onChange={(e) => setBookingButtonUrl(e.target.value)}
+                            onChange={(e) =>
+                              setBookingButtonUrl(e.target.value)
+                            }
                             className="input-field compact"
-                             style={{width: "90%"}}
+                            style={{ width: "90%" }}
                             placeholder="https://..."
                           />
                         </div>
@@ -2181,43 +2512,47 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                     )}
                   </div>
 
-                  {/* Detail Button Section */}
+                  {/* Detail Button */}
                   <div className="button-config-item">
                     <div className="button-toggle">
                       <label className="toggle-switch">
                         <input
                           type="checkbox"
                           checked={enableDetailButton}
-                          onChange={(e) => setEnableDetailButton(e.target.checked)}
+                          onChange={(e) =>
+                            setEnableDetailButton(e.target.checked)
+                          }
                         />
                         <span className="toggle-slider"></span>
                       </label>
                       <span className="toggle-label">
-                        � Nút xem chi tiết {enableDetailButton ? '(Bật)' : '(Tắt)'}
+                        Nút xem chi tiết{" "}
+                        {enableDetailButton ? "(Bật)" : "(Tắt)"}
                       </span>
                     </div>
-                    
                     {enableDetailButton && (
                       <div className="button-inputs">
                         <div className="button-input-group">
                           <label className="button-input-label">Tên nút:</label>
                           <input
                             type="text"
-                             style={{width: "90%"}}
                             value={detailButtonTitle}
-                            onChange={(e) => setDetailButtonTitle(e.target.value)}
+                            onChange={(e) =>
+                              setDetailButtonTitle(e.target.value)
+                            }
                             className="input-field compact"
                             placeholder="Xem chi tiết"
+                            style={{ width: "90%" }}
                           />
                         </div>
                         <div className="button-input-group">
                           <label className="button-input-label">Link:</label>
                           <input
                             type="url"
-                             style={{width: "90%"}}
                             value={detailButtonUrl}
                             onChange={(e) => setDetailButtonUrl(e.target.value)}
                             className="input-field compact"
+                            style={{ width: "90%" }}
                             placeholder="https://..."
                           />
                         </div>
@@ -2226,6 +2561,7 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                   </div>
                 </div>
 
+                {/* Footer */}
                 <div className="form-group footer-section">
                   <div className="button-toggle">
                     <label className="toggle-switch">
@@ -2237,44 +2573,54 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                       <span className="toggle-slider"></span>
                     </label>
                     <span className="toggle-label">
-                      📝 Nội dung chân trang {enableFooter ? '(Bật)' : '(Tắt)'}
+                      Nội dung chân trang {enableFooter ? "(Bật)" : "(Tắt)"}
                     </span>
                   </div>
-                  
                   {enableFooter && (
                     <div className="footer-input">
-                      <label className="block form-label">
-                        Nội dung chân trang
-                      </label>
+                      <label className="form-label">Nội dung chân trang</label>
                       <input
                         type="text"
-                         style={{width: "90%"}}
                         value={footerContent}
                         onChange={(e) => setFooterContent(e.target.value)}
                         className="input-field compact"
+                        style={{ width: "90%" }}
                       />
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Statistics about users with complete data */}
+              {/* === THỐNG KÊ === */}
               {users.length > 0 && (
                 <div className="stats-compact">
-                  <h4 className="stats-title">📊 Thống kê dữ liệu:</h4>
+                  <h4 className="stats-title">Thống kê dữ liệu:</h4>
                   <div className="stats-grid">
-                    <div><strong>Tổng:</strong> {users.length}</div>
-                    <div><strong>Đủ data:</strong> {users.filter(u => u.display_name && u.code && u.code.trim()).length}</div>
-                    <div><strong>Thiếu code:</strong> {users.filter(u => !u.code || !u.code.trim()).length}</div>
+                    <div>
+                      <strong>Tổng:</strong> {users.length}
+                    </div>
+                    <div>
+                      <strong>Đủ data:</strong>{" "}
+                      {
+                        users.filter((u) => u.display_name && u.code?.trim())
+                          .length
+                      }
+                    </div>
+                    <div>
+                      <strong>Thiếu code:</strong>{" "}
+                      {users.filter((u) => !u.code?.trim()).length}
+                    </div>
                   </div>
-                  {users.filter(u => !u.code || !u.code.trim()).length > 0 && (
+                  {users.filter((u) => !u.code?.trim()).length > 0 && (
                     <p className="stats-warning">
-                      ⚠️ Người dùng thiếu code sẽ nhận thông tin từ phần nhập thủ công của code
+                      Người dùng thiếu code sẽ nhận thông tin từ phần nhập thủ
+                      công
                     </p>
                   )}
                 </div>
               )}
 
+              {/* === NÚT GỬI === */}
               <div className="message-actions">
                 <button
                   onClick={sendMessagesToCustomers}
@@ -2286,10 +2632,11 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                   onClick={sendMessageToSelf}
                   className="btn-primary btn-small"
                 >
-                  Gửi cho bạn (Tesst)
+                  Gửi cho bạn (Test)
                 </button>
               </div>
 
+              {/* Response */}
               {messageResponse && (
                 <div
                   className="response-container"
@@ -2302,11 +2649,15 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
           {activeTab === "customerHistory" && (
             <div>
               <h2 className="section-header">Lịch sử khách hàng</h2>
-              
+
               {userHistory.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-600 text-lg mb-4">Chưa có lịch sử khách hàng nào</p>
-                  <p className="text-gray-500 text-sm">Lịch sử sẽ được lưu tự động khi gửi tin nhắn thành công</p>
+                  <p className="text-gray-600 text-lg mb-4">
+                    Chưa có lịch sử khách hàng nào
+                  </p>
+                  <p className="text-gray-500 text-sm">
+                    Lịch sử sẽ được lưu tự động khi gửi tin nhắn thành công
+                  </p>
                 </div>
               ) : (
                 <div>
@@ -2316,7 +2667,9 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                       onClick={toggleSelectAllHistory}
                       className="btn-compact btn-secondary-compact"
                     >
-                      {selectedHistoryIds.length === userHistory.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                      {selectedHistoryIds.length === userHistory.length
+                        ? "Bỏ chọn tất cả"
+                        : "Chọn tất cả"}
                     </button>
                     <button
                       onClick={deleteSelectedHistory}
@@ -2344,23 +2697,41 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                           <th className="py-4 px-6 text-left font-semibold">
                             <input
                               type="checkbox"
-                              checked={selectedHistoryIds.length === userHistory.length && userHistory.length > 0}
+                              checked={
+                                selectedHistoryIds.length ===
+                                  userHistory.length && userHistory.length > 0
+                              }
                               onChange={toggleSelectAllHistory}
                               className="mr-2"
                             />
                             Chọn
                           </th>
-                          <th className="py-4 px-6 text-left font-semibold">STT</th>
-                          <th className="py-4 px-6 text-left font-semibold">User ID</th>
-                          <th className="py-4 px-6 text-left font-semibold">Tên hiển thị</th>
-                          <th className="py-4 px-6 text-left font-semibold">Code</th>
-                          <th className="py-4 px-6 text-left font-semibold">Thời gian</th>
-                          <th className="py-4 px-6 text-left font-semibold">Thao tác</th>
+                          <th className="py-4 px-6 text-left font-semibold">
+                            STT
+                          </th>
+                          <th className="py-4 px-6 text-left font-semibold">
+                            User ID
+                          </th>
+                          <th className="py-4 px-6 text-left font-semibold">
+                            Tên hiển thị
+                          </th>
+                          <th className="py-4 px-6 text-left font-semibold">
+                            Code
+                          </th>
+                          <th className="py-4 px-6 text-left font-semibold">
+                            Thời gian
+                          </th>
+                          <th className="py-4 px-6 text-left font-semibold">
+                            Thao tác
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {userHistory.map((item, index) => (
-                          <tr key={item.id} className="hover:bg-green-50 transition-colors duration-200 border-b border-gray-100">
+                          <tr
+                            key={item.id}
+                            className="hover:bg-green-50 transition-colors duration-200 border-b border-gray-100"
+                          >
                             <td className="py-3 px-6">
                               <input
                                 type="checkbox"
@@ -2368,12 +2739,24 @@ ICOOL thương gửi Quý Khách ưu đãi: MIỄN PHÍ 20% TIỀN GIỜ HÁT
                                 onChange={() => toggleHistorySelection(item.id)}
                               />
                             </td>
-                            <td className="py-3 px-6 text-gray-700">{index + 1}</td>
-                            <td className="py-3 px-6 text-gray-700 font-mono text-sm">{item.user_id}</td>
-                            <td className="py-3 px-6 text-gray-700">{item.display_name}</td>
-                            <td className="py-3 px-6 text-gray-700">{item.code || <span className="text-gray-400 italic">Không có</span>}</td>
+                            <td className="py-3 px-6 text-gray-700">
+                              {index + 1}
+                            </td>
+                            <td className="py-3 px-6 text-gray-700 font-mono text-sm">
+                              {item.user_id}
+                            </td>
+                            <td className="py-3 px-6 text-gray-700">
+                              {item.display_name}
+                            </td>
+                            <td className="py-3 px-6 text-gray-700">
+                              {item.code || (
+                                <span className="text-gray-400 italic">
+                                  Không có
+                                </span>
+                              )}
+                            </td>
                             <td className="py-3 px-6 text-gray-700 text-sm">
-                              {new Date(item.timestamp).toLocaleString('vi-VN')}
+                              {new Date(item.timestamp).toLocaleString("vi-VN")}
                             </td>
                             <td className="py-3 px-6">
                               <button
